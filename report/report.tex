@@ -2,8 +2,15 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
-\usepackage{amsmath,amssymb,graphicx,listings}
+\usepackage{algpseudocode} 
+\usepackage{algorithm}
+\usepackage{amsmath,amssymb,graphicx,listings,stmaryrd}
+\usepackage{tcolorbox}
 \usepackage{subcaption}
+
+\algnewcommand{\LineComment}[1]{\State \(\triangleright\) #1}
+\algnewcommand\True{\textbf{true}\space}
+\algnewcommand\False{\textbf{false}\space}
 
 \newtheorem{definition}{Definition}[section]
  
@@ -14,7 +21,6 @@
 \usetikzlibrary{arrows, automata}
 
 \newcommand\eqdef{\mathrel{\overset{\makebox[0pt]{\mbox{\normalfont\tiny\sffamily def}}}{=}}}
-\newcommand\Until{\mathbin{\mathcal{U}\kern-.1em}}
 
 \setlength{\parindent}{0pt}
 
@@ -289,7 +295,7 @@ We refer to~\cite{UrbanPhd} for a detailed discussion of the various semantics p
 
 
 
-\section{Concrete Semantics for CTL}
+\section{Concrete Semantics for CTL}\label{sec:ctl_semantics}
 In section XY (TODO ref) we introduced the concept of ranking functions and explained how they express the semantics of 
 recurrence and guarantee properties. To be able to analyse CTL properties, we extend the notion of ranking functions 
 to CTL. Urban et al.~\cite{UrbanM-VMCAI15} define ranking functions for guarantee and recurrence properties.
@@ -775,7 +781,7 @@ that satisfies the property.
     \end{align}
 \end{definition}
 
-\section{Decision Tree Abstract Domain}
+\section{Piecewise Defined Ranking Functions}\label{sec:piecewise_defined_ranking_functions}
 
 This section briefly recaps the decision tree abstract domain. 
 First we give a description of the domain. 
@@ -902,8 +908,9 @@ Regular function elements are compared point wise.
 \end{figure}
 
 We now define the decision tree abstract domain $\mathcal{T}$.
-An element $t \in \mathcal{T}$ is either a \textit{leaf node} $LEAF \colon f$ consisting of a function $f \in \mathcal{F}$, or a \textit{decision node}
-$NODE\{c\}: l; r$ consists of a linear constraint $c \in \mathcal{C}$ (denoted $t.c$) and a left and a right sub tree $l, r \in \mathcal{T}$ 
+An element $t \in \mathcal{T}$ is either a \textit{leaf node} $LEAF \colon f$ consisting of a function $f \in \mathcal{F}$ (denoted $t.f$),
+or a \textit{decision node} $NODE\{c\}: l; r$ consists of a linear constraint $c \in \mathcal{C}$ (denoted $t.c$) 
+and a left and a right sub tree $l, r \in \mathcal{T}$ 
 (denoted $t.l$ and $t.r$).
 \[
     \mathcal{T} \eqdef \{LEAF \colon f \ | \ f \in \mathcal{F}\} \cup \{NODE\{c\}: l; r \ | \ c \in \mathcal{C}, l, r \in \mathcal{T} \} 
@@ -923,7 +930,44 @@ as input and reshapes them such that they have the same inner node structure i.e
 The resulting trees are semantically equivalent to their original. This simplifies comparing the partitions of two trees to each other.
 The $tree\_unification$ algorithm is described in great detail in~\cite{UrbanPhd}.
 
-\subsection{Join}
+
+\begin{algorithm}                      
+    \caption{Tree Join Helper}         
+    \label{alg:tree_join_helper}       
+    \begin{algorithmic}
+        \LineComment{$t_{left}, t_{right} \in \mathcal{T}$}
+        \LineComment{$f_{LEAF} \in \mathcal{P}(\mathcal{C}) \rightarrow \mathcal{F} \rightarrow \mathcal{F} \rightarrow \mathcal{T} $}
+        \LineComment{$f_{LeftNIL}, f_{RightNIL} \in \mathcal{P}(\mathcal{C}) \rightarrow \mathcal{F} \rightarrow \mathcal{T} $}
+        \Function{tree\_join\_helper}{$t_{left}, t_{right}, f_{LEAF}, f_{LeftNIL}, f_{RightNIL}$} 
+
+        \Function{aux}{$t_l, t_r, C$} 
+
+        \If{$isNil(t_l) \land isNil(t_r)$}
+            \State \Return $NIL$
+        \ElsIf{$isNil(t_l) \land isLeaf(t_r)$}
+            \State \Return $f_{LeftNIL}(C, t_r.f)$
+        \ElsIf{$isLeaf(t_l) \land isNil(t_r)$}
+            \State \Return $f_{RightNIL}(C, t_l.f)$
+        \ElsIf{$isLeaf(t_l) \land isLeaf(t_r)$}
+            \State \Return $f_{LEAF}(C, t_l.f t_r.f)$
+        \Else
+            \Comment{assert $t_l.c = t_r.c$}
+            \State $l \gets \Call{aux}{t_l.l, t_r.l,  \{t_l.c\} \cup C}$
+            \State $r \gets \Call{aux}{t_l.r, t_r.r, \{\neg t_l.c\} \cup C}$
+            \State \Return $LEAF\{t_l.c\} \colon l ; r $
+        \EndIf
+
+        \EndFunction
+
+        \State $(t_l, t_r) \gets \Call{tree\_unification}{t_{left}, t_{right}}$
+        \State \Return \Call{aux}{$t_l, t_r$}
+        \EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\subsection{Join}\label{sec:tree_join}
 Two trees can be joined to form the union of all partitions represented by the trees. There are two variations of the join operator. 
 The \textit{computational join} $\sqcup_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$
 and the \textit{approximation join} $\curlyvee_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$. 
@@ -1001,6 +1045,7 @@ and the \textit{approximation join} will set the partition to undefined. For det
     \label{fig:decision_tree_join_example}
 \end{figure}
 
+\subsection{Meet}\label{sec:tree_meet}
 
 \subsection{Filter}
 TODO
@@ -1014,9 +1059,115 @@ TODO
 
 \section{Abstract Semantics for CTL}
 
-This section presents the abstract interpretation framework for analysing CTL properties. 
-First we recall the concept of ranking functions and define how ranking functions relate to 
-the satisfiability of CTL properties. Then we describe the concrete semantics of ranking functions for CTL properties.
+In this section we present a sound, computable abstraction of the CTL semantics $\tau_\Phi$.\\
+
+Computing the ranking function $\tau_\Phi$ is in general not computable as one can easily encode the 
+halting problem in $\tau_\Phi$. Therefore, we settle for a sound but computable approximation of $\tau_\Phi$ by using
+the abstract domain of piecewise defined ranking functions presented in section~\ref{sec:piecewise_defined_ranking_functions}.
+
+\begin{definition}
+    The abstract CTL semantics $\tau^{\sharp}_\Phi \in \mathcal{L} \rightarrow \mathcal{T}$ is a sound approximation of the
+    CTL semantics $\tau_\Phi$ with regards to the \textit{approximation order} $\preceq$.
+\end{definition}
+
+Recall that the CTL semantics $\tau_\Phi \in \Sigma \rightarrow \mathbb{N}$ is a partial function that 
+assigns numerical values to program states $\sigma \in \Sigma$. 
+In the abstract version, program states are partitioned by decision trees $t \in \mathcal{T}$ and 
+grouped by program labels $l \in \mathcal{L}$. A program satisfies a given CTL property $\Phi$ if the decision tree of the
+initial program label $\tau^{\sharp}_\Phi(t_{init})$ is defined over all partitions 
+(TODO introduce notion of defined w.r.t decision trees).
+\\
+
+The following sections present how to compute $\tau^{\sharp}_\Phi$ for each CTL operator. 
+We start with the basic operators $\land, \lor, \neg$ and atomic propositions that can be computed directly 
+from the control-flow-graph (CFG). 
+Then we present how to compute the universal $\forall U$, $\forall\bigcirc$ and $\forall\square$ operators through fixed point iteration. 
+Followed by a discussion on how to adapt the universal operators to their existential version.
+
+\subsection{Atomic Propositions}
+
+Atomic propositions are path independent, therefore abstract CTL semantics $\tau^{\sharp}_a$ assigns the same decision tree to 
+each program label $l \in \mathcal{L}$. The decision tree assigns the constant value $0$ to all partitions that satisfy the atomic proposition.
+We compute this by using the $\text{RESET} \llbracket a \rrbracket$ operator on the totally undefined decision tree $\bot$ (see section XY TODO). 
+
+\begin{definition}\label{def:abstract_ctl_semantics_atomic}
+    Abstract CTL semantics for atomic propositions
+    \begin{align}
+        \tau^{\sharp}_{a} \eqdef \ \lambda l. \ \text{RESET} \llbracket a \rrbracket \bot
+    \end{align}
+\end{definition}
+
+
+\begin{tcolorbox}
+    \subsubsection*{Fixing the \text{RESET} operator}
+    The $\text{RESET}\llbracket a \rrbracket$ operator was originally introduced in~\cite{UrbanPhd} in the context of abstract guarantee semantics
+    and would overapproximate the set of partitions that satisfy the atomic proposition $a$. 
+    During the work on this thesis, we discovered that this original definition is actually unsound and leads to incorrect analysis results. \\
+    
+    The problem is best described using an example. Consider the abstract CTL semantics $\tau^{\sharp}_{x^2 < y^3 + 1}$. 
+    The non linear constraint $x^2 < y^3 + 1$ can usually not be represented by any of the common numerical domains. 
+    An overapproximating implementation of $\text{RESET}\llbracket x^2 < y^3 + 1 \rrbracket$ will therefore
+    reset some pairs $(x, y)$ for which $x^2 < y^3 + 1$ does not hold which is unsound as to the definition of
+    the CTL semantics $\tau_{x^2 < y^3 + 1}$. Note that this problem propagates to more complex temporal properties that
+    depend on atomic propositions.\\
+
+    We resolve this problem by using an underapproximating implementation of $\text{RESET}$ as presented
+    in section XY (TODO ref).
+\end{tcolorbox}
+
+
+\subsection{Logical Operators}
+In this section we define the logical operators $\land$, $\lor$ and $\neg$ for the abstract CTL semantics.
+All of the mentioned operators will are defined inductively over the abstract CTL semantics of the nested properties in
+definition~\ref{def:abstract_ctl_semantics_logic_operators}.
+
+\begin{definition}\label{def:abstract_ctl_semantics_logic_operators}
+    Abstract CTL semantics for logic operators
+    \begin{align}
+        \tau^{\sharp}_{\Phi_1 \land \Phi_2} &\eqdef \ \lambda l. \ (\tau^{\sharp}_{\neg \Phi_1}l) \ \sqcup_{\mathcal{T}} \ (\tau^{\sharp}_{\neg \Phi_2}l)
+        \label{eq:abstract_ctl_and}\\
+        \tau^{\sharp}_{\Phi_1 \lor \Phi_2} &\eqdef \ \lambda l. \ (\tau^{\sharp}_{\neg \Phi_1}l) \ \sqcap_{\mathcal{T}} \ (\tau^{\sharp}_{\neg \Phi_2}l)
+        \label{eq:abstract_ctl_or}\\
+        \tau^{\sharp}_{\neg \Phi} &\eqdef \ \lambda l. \ \text{COMPLEMENT} \ (\tau^{\sharp}_{\neg \Phi}l)
+        \label{eq:abstract_ctl_not}
+    \end{align}
+\end{definition}
+
+The abstract CTL semantics for $\land$ and $\lor$ (equations~\ref{eq:abstract_ctl_and} and~\ref{eq:abstract_ctl_or}) combine the decision trees
+of the nested properties piecewise for each program label.\\
+
+The \textit{computational join} $\sqcup_{\mathcal{T}}$ is used to combine the two trees (see section~\ref{sec:tree_join}) in
+case of the logical $\lor$. This operator forms the union of the two decision trees. 
+Note that we use the computational version of the join operator to include partitions that are defined in at least one of the two trees. 
+If a partition is defined in both trees, the smallest upper bound of the assigned value is formed to approximate the concrete CTL semantics.\\
+
+The corresponding definition for the logical $\land$ operator forms the intersection of the two trees by using the
+\textit{computational meet} $\sqcap_{\mathcal{T}}$ (see section~\ref{sec:tree_meet}). 
+As with the logical $\lor$, the smallest upper bound is formed if a partition is defined for both trees. 
+By using the computational version of the operator, we ensure that no $NIL$ leafs are introduced.\\
+
+For the logical $\neg$ operator we introduce the new $\text{COMPLEMENT}$ operator which, 
+in a nutshell, forms the complement of a ranking function represented by a decision tree. 
+The $\text{COMPLEMENT}$ operator is implemented in algorithm (TODO ref).
+
+Every state that was originally defined in the tree will become undefined and vice-versa.
+
+However one has to be careful when forming the complement of a decision tree. Decision trees are an 
+approximation of the concrete CTL semantics. Therefore not all states that are undefined in the abstract decision tree
+are actually undefined in the concrete. Partitions that are undefined because of this uncertainty are marked with a $\top$
+leaf. These leafs have to be ignored when forming the complement of a decision tree.   
+
+
+
+
+
+\subsection{Universal Operators}
+\subsection{Existential Operators}
+
+
+
+
+
 
 
 \pagebreak
