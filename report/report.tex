@@ -781,6 +781,80 @@ that satisfies the property.
     \end{align}
 \end{definition}
 
+
+\section{Imperative Language}\label{sec:imperative_language}
+
+In this section we briefly introduce a minimal imperative programming language. 
+It will be used in section~\ref{sec:abstract_ctl_semantics} to define the abstract CTL semantics.
+The language has no procedures, pointers or recursion. It is non-deterministic.
+Variables are integer valued ($\mathbb{Z}$) and statically allocated. 
+
+
+First we define the syntax for arithmetic and boolean expressions. 
+The syntax definitions are based on chapter 3 of~\cite{UrbanPhd}.
+
+\begin{definition}\label{def:arith_bool_syntax}
+    Syntax for arithmetic and boolean expressions. 
+    Arithmetic expressions are defined over a set of variables $\mathcal{X}$.
+    \begin{align*}
+        \setlength{\jot}{15pt}
+        aexp \ ::= \ & \ \ X && X \in \mathcal{X} \\
+        &| \  [i_1, i_2] && i_1 \in \mathbb{Z} \cup \{ -\infty \},\ i_1 \in \mathbb{Z} \cup \{\infty \},\ i_1 \leq i_2  \\
+        &| \  - aexp \\
+        &| \  aexp \diamond aexp && \diamond \in \{ +, -, *, / \}\\
+        \\
+        bexp \ ::= \ & \ \ ?  && \text{non-deterministic choice} \\
+        &| \  \neg bexp \\
+        &| \  bexp \land bexp \\
+        &| \  bexp \lor bexp \\
+        &| \  aexp \diamond aexp && \diamond \in \{<, \leq, >, \geq \}\\
+    \end{align*}
+\end{definition}
+
+The semantics for expressions are defined as expected. 
+Please refer to~\cite{UrbanPhd} for a formal definition. 
+Note that the symbol `?' stands for non-deterministic choice.\\
+
+Programs are represented as control-flow-graphs (CFG) (see definition~\ref{def:control_flow_graph}). 
+A control-flow-graph $(V, E) \in cfg$ consists of a set of nodes $V$ and edges $E$.
+Every control point of a program is assigned a label $l \in \mathcal{L}$. 
+The nodes in the control-flow-graph correspond to those labels. 
+An edge $(u, s, v) \in edge$ states that one can transition from node
+$u$ to $v$ by executing statement $s$. 
+The \texttt{skip} statements 
+transitions from one node to another without doing anything, the boolean expression $bexp$ limits the set of states
+that are allowed to transition to the next node and the assignment $X := aexp$ assigns the value of the arithmetic expression $aexp$
+to the variable $X$. A program $(\text{cfg}, l_{entry}, l_{exit}) \in prog$ consists of a control-flow-graph and two special 
+nodes that defined the entry and exit point of the program.
+
+\begin{definition}\label{def:control_flow_graph}
+    Program representation as control-flow-graph. 
+    Let $\mathcal{L}$ be the set of program labels.
+    \begin{align*}
+        \setlength{\jot}{15pt}
+        stmt \ ::= \ & \ \ \mathtt{skip} \\
+        &| \ bexp \\
+        &| \ X := aexp  && X \in \mathcal{X} \\
+        \\
+        edge \ \eqdef & \ \ \mathcal{L} \times stmt \times \mathcal{L}\\
+        cfg \ \eqdef & \ \ \mathcal{P}(\mathcal{L}) \times \mathcal{P}(edge)\\
+        prog \ \eqdef & \ \ cfg \times \mathcal{L} \times \mathcal{L}
+    \end{align*}
+\end{definition}
+
+We also introduce the following auxiliary relations on nodes in the context of a control-flow-graph
+$(V, E) \in cfg$. The relation $in(l)$ denotes all direct predecessor nodes of $l$. 
+The relation $out(l)$ denotes all direct successor nodes of $l$.
+
+\begin{definition}\label{def:cfg_in}
+    Given a control-flow-graph $(V, E) \in cfg$ 
+    \begin{align*}
+        in(l) &\eqdef \{ l' \in V \ | \ \exists \ (u, s, v) \in E \colon u = l' \land v = l \}\\
+        out(l) &\eqdef \{ l' \in V \ | \ \exists \ (u, s, v) \in E \colon u = l \land v = l' \}
+    \end{align*}
+\end{definition}
+
+
 \section{Piecewise Defined Ranking Functions}\label{sec:piecewise_defined_ranking_functions}
 
 This section briefly recaps the decision tree abstract domain. 
@@ -935,7 +1009,7 @@ The $tree\_unification$ algorithm is described in great detail in~\cite{UrbanPhd
     \caption{Tree Join Helper}         
     \label{alg:tree_join_helper}       
     \begin{algorithmic}
-        \LineComment{$t_{left}, t_{right} \in \mathcal{T}$}
+        \LineComment{$t_{left}, t_{right} \in \mathcal{T}_{NIL}$}
         \LineComment{$f_{LEAF} \in \mathcal{P}(\mathcal{C}) \rightarrow \mathcal{F} \rightarrow \mathcal{F} \rightarrow \mathcal{T} $}
         \LineComment{$f_{LeftNIL}, f_{RightNIL} \in \mathcal{P}(\mathcal{C}) \rightarrow \mathcal{F} \rightarrow \mathcal{T} $}
         \Function{tree\_join\_helper}{$t_{left}, t_{right}, f_{LEAF}, f_{LeftNIL}, f_{RightNIL}$} 
@@ -954,7 +1028,7 @@ The $tree\_unification$ algorithm is described in great detail in~\cite{UrbanPhd
             \Comment{assert $t_l.c = t_r.c$}
             \State $l \gets \Call{aux}{t_l.l, t_r.l,  \{t_l.c\} \cup C}$
             \State $r \gets \Call{aux}{t_l.r, t_r.r, \{\neg t_l.c\} \cup C}$
-            \State \Return $LEAF\{t_l.c\} \colon l ; r $
+            \State \Return $NODE\{t_l.c\} \colon l ; r $
         \EndIf
 
         \EndFunction
@@ -1057,10 +1131,13 @@ TODO
 TODO
 
 
-\section{Abstract Semantics for CTL}
 
-In this section we present a sound, computable abstraction of the CTL semantics $\tau_\Phi$.\\
 
+
+
+\section{Abstract Semantics for CTL}\label{sec:abstract_ctl_semantics}
+
+In this section we present a sound, computable abstraction of the CTL semantics $\tau_\Phi$.
 Computing the ranking function $\tau_\Phi$ is in general not computable as one can easily encode the 
 halting problem in $\tau_\Phi$. Therefore, we settle for a sound but computable approximation of $\tau_\Phi$ by using
 the abstract domain of piecewise defined ranking functions presented in section~\ref{sec:piecewise_defined_ranking_functions}.
@@ -1079,16 +1156,20 @@ initial program label $\tau^{\sharp}_\Phi(t_{init})$ is defined over all partiti
 \\
 
 The following sections present how to compute $\tau^{\sharp}_\Phi$ for each CTL operator. 
-We start with the basic operators $\land, \lor, \neg$ and atomic propositions that can be computed directly 
-from the control-flow-graph (CFG). 
-Then we present how to compute the universal $\forall U$, $\forall\bigcirc$ and $\forall\square$ operators through fixed point iteration. 
-Followed by a discussion on how to adapt the universal operators to their existential version.
+We start with the basic operators $\land, \lor, \neg$ and atomic propositions. 
+These can be computed directly for each program label. 
+Then we present how to compute the universal $\forall U$, $\forall\bigcirc$ and $\forall\square$ operators through fixed-point iteration. 
+Followed by a discussion on how to adapt the universal operators to their existential version. 
+Note that the abstract CTL semantics are computed recursively. The recursion stops at atomic propositions.
 
-\subsection{Atomic Propositions}
+\subsection{Path Independent Operators}
+TODO 
 
-Atomic propositions are path independent, therefore abstract CTL semantics $\tau^{\sharp}_a$ assigns the same decision tree to 
-each program label $l \in \mathcal{L}$. The decision tree assigns the constant value $0$ to all partitions that satisfy the atomic proposition.
-We compute this by using the $\text{RESET} \llbracket a \rrbracket$ operator on the totally undefined decision tree $\bot$ (see section XY TODO). 
+\textbf{Atomic Propositions}\\
+
+Atomic propositions are path independent, therefore $\tau^{\sharp}_a$ assigns the same decision tree to 
+each program label $l \in \mathcal{L}$. This decision tree assigns the constant value $0$ to all partitions that satisfy the atomic proposition $a$.
+We compute this tree by using the $\text{RESET} \llbracket a \rrbracket$ operator on the totally undefined decision tree $\bot$ (see section XY TODO). 
 
 \begin{definition}\label{def:abstract_ctl_semantics_atomic}
     Abstract CTL semantics for atomic propositions
@@ -1116,10 +1197,8 @@ We compute this by using the $\text{RESET} \llbracket a \rrbracket$ operator on 
 \end{tcolorbox}
 
 
-\subsection{Logical Operators}
-In this section we define the logical operators $\land$, $\lor$ and $\neg$ for the abstract CTL semantics.
-All of the mentioned operators will are defined inductively over the abstract CTL semantics of the nested properties in
-definition~\ref{def:abstract_ctl_semantics_logic_operators}.
+\textbf{Logical Operators}\\
+Now we define the abstract CTL semantics for the logical operators $\land$, $\lor$ and $\neg$.
 
 \begin{definition}\label{def:abstract_ctl_semantics_logic_operators}
     Abstract CTL semantics for logic operators
@@ -1143,26 +1222,95 @@ If a partition is defined in both trees, the smallest upper bound of the assigne
 
 The corresponding definition for the logical $\land$ operator forms the intersection of the two trees by using the
 \textit{computational meet} $\sqcap_{\mathcal{T}}$ (see section~\ref{sec:tree_meet}). 
-As with the logical $\lor$, the smallest upper bound is formed if a partition is defined for both trees. 
-By using the computational version of the operator, we ensure that no $NIL$ leafs are introduced.\\
+As with the logical $\lor$, the smallest upper bound is formed if a partition is defined in both trees. 
+By using the computational version of the operator, 
+we ensure that no $NIL$ leafs are introduced when forming the intersection.\\
 
-For the logical $\neg$ operator we introduce the new $\text{COMPLEMENT}$ operator which, 
-in a nutshell, forms the complement of a ranking function represented by a decision tree. 
-The $\text{COMPLEMENT}$ operator is implemented in algorithm (TODO ref).
-
-Every state that was originally defined in the tree will become undefined and vice-versa.
-
-However one has to be careful when forming the complement of a decision tree. Decision trees are an 
+For the logical $\neg$ operator we introduce the $\text{COMPLEMENT}$ operator. 
+This operator replaces all defined leafs with a $\bot$-leaf and all $\bot$-leafs with the constant value $0$.
+By doing so, all states that originally satisfied the property do not satisfy it any more and vice-versa.
+However one has to be careful when changing a partition from undefined to defined. Decision trees are an 
 approximation of the concrete CTL semantics. Therefore not all states that are undefined in the abstract decision tree
-are actually undefined in the concrete. Partitions that are undefined because of this uncertainty are marked with a $\top$
-leaf. These leafs have to be ignored when forming the complement of a decision tree.   
+are actually undefined in the concrete ranking function. Partitions that are undefined because of this uncertainty are marked with a 
+$\top$-leaf. To ensure soundness, these leafs have to be ignored when forming the complement of a decision tree.   
+The $\text{COMPLEMENT}$ operator is implemented in algorithm~\ref{alg:tree_complement}.
+
+\begin{algorithm}                      
+    \caption{Tree Complement}         
+    \label{alg:tree_complement}       
+    \begin{algorithmic}
+        \Function{complement}{$t$} 
+        \Comment{$t \in \mathcal{T}_{NIL}$}
+        \If{$(isNode(t) \land t.f = \top) \lor isNil(t)$}
+            \State \Return $t$
+            \Comment{ignore $\top$ and $NIL$}
+        \ElsIf{$isLeaf(t) \land t.f = \bot$}
+            \State \Return $LEAF: 0$
+            \Comment{undefined becomes defined}
+        \ElsIf{$isLeaf(t)$}
+            \State \Return $LEAF: \bot$
+            \Comment{defined becomes undefined}
+        \Else
+            \State $l \gets \Call{complement}{t.l}$
+            \State $r \gets \Call{complement}{t.r}$
+            \State \Return $NODE\{t.c \}: l ; r$
+        \EndIf
+        \EndFunction
+\end{algorithmic}
+\end{algorithm}
 
 
+\subsection{Path Dependent Operators}
 
+In this section we describe how the abstract CTL semantics for the path dependent operators 
+($\forall\bigcirc\Phi,\ \exists\bigcirc\Phi,\ \forall(\Phi_1 U \Phi_2),\ \exists(\Phi_1 U \Phi_2),\ \forall\square\Phi,\ \exists\square\Phi$)
+can be computed.\\
 
+First, we define the two functions ${\llbracket stmt \rrbracket}_o \in \mathcal{T}_{NIL} \rightarrow \mathcal{T}_{NIL}$
+and ${\llbracket stmt \rrbracket}_u \in \mathcal{T}_{NIL} \rightarrow \mathcal{T}_{NIL}$. 
+The first one uses overapproximation on the underlying numerical domains and the second one underapproximation.\\
 
-\subsection{Universal Operators}
-\subsection{Existential Operators}
+The purpose of these functions is to encode the effect of backward propagating an edge 
+in the control-flow-graph i.e. the effect of executing a statement. 
+Assume that we computed a decision tree for the target node of some edge. 
+This decision tree represents the value of the ranking function for the program label associated with this node. 
+By applying $\llbracket \cdot \rrbracket$ to this tree, we compute the decision tree 
+that holds before executing the statement i.e.\ the value of the ranking function associated to the source node of the edge.
+
+\begin{definition}\label{def:basic_expression_transformer}
+    Abstract semantics for basic statements
+    \begin{align*}
+        {\llbracket \mathtt{skip} \rrbracket}_o \eqdef \lambda t. \ \text{STEP}(t)\\
+        {\llbracket bexp \rrbracket}_o \eqdef \lambda t. \ \text{B-ASSIGN}(t)\\
+        {\llbracket X := aexp \rrbracket}_o \eqdef \lambda t. \ \text{FILTER}(t)\\
+        \\
+        {\llbracket \mathtt{skip} \rrbracket}_u \eqdef \lambda t. \ \text{STEP}(t)\\
+        {\llbracket bexp \rrbracket}_u \eqdef \lambda t. \ \text{B-ASSIGN-UNDER}(t)\\
+        {\llbracket X := aexp \rrbracket}_u \eqdef \lambda t. \ \text{FILTER-UNDER}(t)\\
+    \end{align*}
+\end{definition}
+
+The \texttt{skip} statement is handled by the STEP operator. This operator increases the value of all defined
+partitions in the decision tree by one (see XY TODO). Recall that a defined partition in a decision tree represents a set of states that satisfies 
+some CTL property. The associated value is an upper bound on the number of steps until some condition is reached. 
+By executing \texttt{skip} this number is incremented by one.
+For assignments and boolean conditions we use the corresponding B-ASSIGN and FILTER operators.\\
+
+What is left to do is define how to compute the abstract CTL semantics for the different path dependent CTL properties. 
+All are computed through fixed-point iteration on the control flow graph. In general, the abstract CTL semantics $\tau^\sharp_\Phi$
+are a fixed point of the abstract transformer $\phi^\sharp_\Phi$ w.r.t the computational order $\sqsubseteq_{\mathcal{T}}$. 
+
+\begin{align*}
+    \tau^\sharp_\Phi &= lfp^{\sqsubseteq_{\mathcal{T}}} \phi^\sharp_\Phi  \\
+    \phi^\sharp_\Phi &\in (\mathcal{L} \rightarrow \mathcal{T}_{NIL}) \rightarrow (\mathcal{L} \rightarrow \mathcal{T}_{NIL})
+\end{align*}
+
+The initial value for the fixed-point computation and the definition of $\phi^\sharp_\Phi$
+depend on the semantic of the corresponding CTL property $\Phi$. Note that $\phi^\sharp_\Phi$ must approximate 
+the abstract transformer $\phi_\Phi$ of the concrete CTL semantics.\\
+
+\textbf{Until}\\
+The abstract transformers for the universal and existential `until' properties are given in definition XY
 
 
 
