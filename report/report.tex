@@ -1310,7 +1310,24 @@ the abstract transformer $\phi_\Phi$ of the concrete CTL semantics.\\
 
 \textbf{Until}\\
 The abstract transformers for the universal and existential `until' properties are given in definition~\ref{def:abstract_until_semantics}. 
-Both versions follow the same structure. We will first discuss the universal version.\\
+Both versions follow the same structure. The fixed-point iterations starts fro the totally undefined decision tree $\bot$. 
+We will first discuss the universal version and then explain what changes for the existential case.\\
+
+\begin{definition}\label{def:abstract_until_semantics}
+    Abstract semantics for `until' operator.
+    \setlength{\jot}{15pt}
+    \begin{align*}
+        \tau^\sharp_{\forall(\Phi_1 U \Phi_2)} \ &\eqdef \ lfp^{\sqsubseteq_{\mathcal{T}}}_{\bot} \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}\\
+        t_{\curlyvee}(l)  \ &\eqdef \ \bigcurlyvee\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{o} ( m(l')) \\
+        \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ UNTIL\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket (t_{\curlyvee}(l))  \\\\
+        %
+        %
+        \tau^\sharp_{\exists(\Phi_1 U \Phi_2)} \ &\eqdef \ lfp^{\sqsubseteq_{\mathcal{T}}}_{\bot} \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}\\
+        t_{\sqcup}(l) \ &\eqdef \ \bigsqcup\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{u} (m(l')) \\
+        \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ UNTIL\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket ( t_{\sqcup}(l))
+    \end{align*}
+\end{definition}
+
 
 Recall that $out(l)$ denotes all outgoing edges of node $l$ leading to its immediate successors nodes. Every edge is labeled with a statement. 
 The abstract transformer $\phi^\sharp_{\forall(\Phi_1 U \Phi_2)}$ computes decision trees for each node $l$ in the 
@@ -1335,10 +1352,63 @@ Partitions that are unfeasible among some paths are discarded.\\
 Finally the result of joining the decision trees of the immediate predecessors are 
 applied to he $UNTIL\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket $ operator (see definition XY TODO). 
 This operator approximates the semantics of the `until' operator. 
-All partitions that satisfy $\Phi_1$ are set to zero and all partitions that neither satisfy $\Phi_1$ nor $\Phi_2$ are discarded.
+All partitions that satisfy $\Phi_1$ are set to zero and all partitions that neither 
+satisfy $\Phi_1$ nor $\Phi_2$ are discarded (see algorithm~\ref{alg:tree_until}).
 That way we end up with a decision tree that is only defined for those partitions which satisfy $\forall(\Phi_1 U \Phi_2)$.\\
 
-The abstract tansformer for the existential case follows the same structure. 
+\begin{algorithm}                      
+    \caption{Tree Until Filter}         
+    \label{alg:tree_until_filter}       
+    \begin{algorithmic}
+        \Function{filter\_until}{$t, t_{\text{valid}}$} 
+            \If{$isNil(t) \lor isNil(t_{\text{valid}})$}
+                \LineComment{ignore $NIL$ nodes}
+                \State \Return $t$
+            \ElsIf{$isLeaf(t) \land isLeaf(t_{\text{valid}}) \land isDefined(t)$}
+                \LineComment{$t$ is defined in $t_{\text{valid}}$}
+                \State \Return $t$
+            \ElsIf{$isLeaf(t) \land isLeaf(t_{\text{valid}}) \land  \neg isDefined(t)$}
+                \LineComment{$t$ is not defined in $t_{\text{valid}}$, make undefined}
+                \State \Return $LEAF: \bot$
+            \Else
+                \State $l \gets \Call{filter\_until}{t.l, t_{\text{valid}}.l}$
+                \State $r \gets \Call{filter\_until}{t.r, t_{\text{valid}}.r}$
+                \State \Return $NODE\{t.c \}: l ; r$
+            \EndIf 
+        \EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}                      
+    \caption{Tree Until}         
+    \label{alg:tree_until}       
+    \begin{algorithmic}
+        \Function{reset\_until}{$t, t_{\text{reset}}$} 
+            \If{$isNil(t) \lor isNil(t_{\text{reset}})$}
+                \LineComment{ignore $NIL$ nodes}
+                \State \Return $t$
+            \ElsIf{$isLeaf(t) \land isLeaf(t_{\text{reset}}) \land isDefined(t)$}
+                \LineComment{$t$ is defined in $t_{\text{valid}}$, reset leaf}
+                \State \Return $LEAF: 0$
+            \ElsIf{$isLeaf(t) \land isLeaf(t_{\text{valid}}) \land  \neg isDefined(t)$}
+                \LineComment{$t$ is undefined in $t_{\text{valid}}$, keep as is}
+                \State \Return $t$
+            \Else
+                \State $l \gets \Call{reset\_until}{t.l, t_{\text{reset}}.l}$
+                \State $r \gets \Call{reset\_until}{t.r, t_{\text{reset}}.r}$
+                \State \Return $NODE\{t.c \}: l ; r$
+            \EndIf 
+        \EndFunction
+        \Function{until}{$t, t_{\Phi_1}, t_{\Phi_2}$} 
+            \Comment{$t, t_{\Phi_1}, t_{\Phi_2} \in \mathcal{T}_{NIL}$}
+            \State $t_{\text{filtered}} \gets \Call{filter\_until}{\Call{tree\_unification}{t, t_{\Phi_1} \sqcup t_{\Phi_2}}}$
+            \State \Return $\Call{reset\_until}{\Call{tree\_unification}{t_{\text{filtered}}, t_{\Phi_2}}}$
+        \EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+The abstract tansformer for the existential case follows the same structure as in the universal case. 
 Instead of using the \textit{approximation join} it uses the \textit{computational join} $\sqcup$ 
 to approximate the semantics of the $\exists$ path quantifier. 
 The \textit{computational join} preserves all partitions that are defined for at least one decision tree. 
@@ -1346,22 +1416,9 @@ Note however, that all decision trees passed to the \textit{computation join} mu
 rely on the join operator to discard unfeasible partitions. Therefore we apply the underapproximating ${\llbracket stmt \rrbracket}_{u}$ 
 function when processing satements to guarantee soundness.
 
-\begin{definition}\label{def:abstract_until_semantics}
-    Abstract semantics for `until' operator.
-    \setlength{\jot}{15pt}
-    \begin{align*}
-        \tau^\sharp_{\forall(\Phi_1 U \Phi_2)} \ &\eqdef \ lfp^{\sqsubseteq_{\mathcal{T}}}_{\bot} \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}\\
-        t_{\curlyvee}(l)  \ &\eqdef \ \bigcurlyvee\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{o} ( m(l')) \\
-        \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ UNTIL\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket (t_{\curlyvee}(l))  \\\\
-        %
-        %
-        \tau^\sharp_{\exists(\Phi_1 U \Phi_2)} \ &\eqdef \ lfp^{\sqsubseteq_{\mathcal{T}}}_{\bot} \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}\\
-        t_{\sqcup}(l) \ &\eqdef \ \bigsqcup\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{u} (m(l')) \\
-        \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ UNTIL\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket ( t_{\sqcup}(l))
-    \end{align*}
-\end{definition}
 
-
+\textbf{Global}\\
+The abstract transformers for the universal and existential `global' properties are given in definition~\ref{def:abstract_global_semantics}. 
 
 
 
