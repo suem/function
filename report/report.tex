@@ -842,15 +842,14 @@ nodes that defined the entry and exit point of the program.
     \end{align*}
 \end{definition}
 
-We also introduce the following auxiliary relations on nodes in the context of a control-flow-graph
-$(V, E) \in cfg$. The relation $in(l)$ denotes all direct predecessor nodes of $l$. 
-The relation $out(l)$ denotes all direct successor nodes of $l$.
+We introduce the following auxiliary functions on nodes of a control-flow-graph $(V, E) \in cfg$ 
+to refere to the incoming and outgoing edges of a node $l \in V$.
 
 \begin{definition}\label{def:cfg_in}
     Given a control-flow-graph $(V, E) \in cfg$ 
     \begin{align*}
-        in(l) &\eqdef \{ l' \in V \ | \ \exists \ (u, s, v) \in E \colon u = l' \land v = l \}\\
-        out(l) &\eqdef \{ l' \in V \ | \ \exists \ (u, s, v) \in E \colon u = l \land v = l' \}
+        in(l) &\eqdef \{(u, s, v) \in E \ | \ v = l \}\\
+        out(l) &\eqdef \{(u, s, v) \in E \ | \ u = l \}\\
     \end{align*}
 \end{definition}
 
@@ -1268,14 +1267,14 @@ can be computed.\\
 
 First, we define the two functions ${\llbracket stmt \rrbracket}_o \in \mathcal{T}_{NIL} \rightarrow \mathcal{T}_{NIL}$
 and ${\llbracket stmt \rrbracket}_u \in \mathcal{T}_{NIL} \rightarrow \mathcal{T}_{NIL}$. 
-The first one uses overapproximation on the underlying numerical domains and the second one underapproximation.\\
+The first one uses overapproximation on the underlying numerical domains, the second one underapproximation.\\
 
-The purpose of these functions is to encode the effect of backward propagating an edge 
+Both functions implement the effect of backward propagating an edge 
 in the control-flow-graph i.e. the effect of executing a statement. 
 Assume that we computed a decision tree for the target node of some edge. 
-This decision tree represents the value of the ranking function for the program label associated with this node. 
+This decision tree represents the value of the ranking function for the program label of this node. 
 By applying $\llbracket \cdot \rrbracket$ to this tree, we compute the decision tree 
-that holds before executing the statement i.e.\ the value of the ranking function associated to the source node of the edge.
+that holds before executing the statement i.e.\ the value of the ranking function at the source node of this edge.
 
 \begin{definition}\label{def:basic_expression_transformer}
     Abstract semantics for basic statements
@@ -1296,7 +1295,7 @@ some CTL property. The associated value is an upper bound on the number of steps
 By executing \texttt{skip} this number is incremented by one.
 For assignments and boolean conditions we use the corresponding B-ASSIGN and FILTER operators.\\
 
-What is left to do is define how to compute the abstract CTL semantics for the different path dependent CTL properties. 
+What is left is how to compute the abstract CTL semantics for the different path dependent CTL properties. 
 All are computed through fixed-point iteration on the control flow graph. In general, the abstract CTL semantics $\tau^\sharp_\Phi$
 are a fixed point of the abstract transformer $\phi^\sharp_\Phi$ w.r.t the computational order $\sqsubseteq_{\mathcal{T}}$. 
 
@@ -1310,9 +1309,57 @@ depend on the semantic of the corresponding CTL property $\Phi$. Note that $\phi
 the abstract transformer $\phi_\Phi$ of the concrete CTL semantics.\\
 
 \textbf{Until}\\
-The abstract transformers for the universal and existential `until' properties are given in definition XY
+The abstract transformers for the universal and existential `until' properties are given in definition~\ref{def:abstract_until_semantics}. 
+Both versions follow the same structure. We will first discuss the universal version.\\
 
+Recall that $out(l)$ denotes all outgoing edges of node $l$ leading to its immediate successors nodes. Every edge is labeled with a statement. 
+The abstract transformer $\phi^\sharp_{\forall(\Phi_1 U \Phi_2)}$ computes decision trees for each node $l$ in the 
+control-flow-graph, based on the decision trees of its successor nodes.\\
 
+First, the decision tree of each successor node $l'$ is applied to the ${\llbracket stmt \rrbracket}_{o}$ function. 
+This approximates the effect of transitioning from $l$ to $l'$. The resulting decision tree approximates the value of 
+the ranking function before executing the statement.\\
+
+If a node has multiple successor nodes then the resulting decision trees 
+are combined using the \textit{approximation join} $\curlyvee$. The \textit{approximation join} discards all partitions of
+decision trees that are not defined for all successor nodes. By doing so, we approximate the semantic of the universal path  
+quantifier $\forall$.\\ 
+
+We use the overapproximating version of the ${\llbracket \cdot \rrbracket}_{o}$ function. 
+This might temporarely lead to unsound decision trees due to overapproximation. 
+Decision trees produced by ${\llbracket \cdot \rrbracket}_{o}$ might contain defined partitions for states that are unfeasible 
+among that path in the control-flow-graph. For the universal case however, this is not a problem since the 
+\textit{approximation join} only keeps those partitions which are feasible among all paths. 
+Partitions that are unfeasible among some paths are discarded.\\
+
+Finally the result of joining the decision trees of the immediate predecessors are 
+applied to he $UNTIL\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket $ operator (see definition XY TODO). 
+This operator approximates the semantics of the `until' operator. 
+All partitions that satisfy $\Phi_1$ are set to zero and all partitions that neither satisfy $\Phi_1$ nor $\Phi_2$ are discarded.
+That way we end up with a decision tree that is only defined for those partitions which satisfy $\forall(\Phi_1 U \Phi_2)$.\\
+
+The abstract tansformer for the existential case follows the same structure. 
+Instead of using the \textit{approximation join} it uses the \textit{computational join} $\sqcup$ 
+to approximate the semantics of the $\exists$ path quantifier. 
+The \textit{computational join} preserves all partitions that are defined for at least one decision tree. 
+Note however, that all decision trees passed to the \textit{computation join} must be sound since we can no longer 
+rely on the join operator to discard unfeasible partitions. Therefore we apply the underapproximating ${\llbracket stmt \rrbracket}_{u}$ 
+function when processing satements to guarantee soundness.
+
+\begin{definition}\label{def:abstract_until_semantics}
+    Abstract semantics for `until' operator.
+    \setlength{\jot}{15pt}
+    \begin{align*}
+        \tau^\sharp_{\forall(\Phi_1 U \Phi_2)} \ &\eqdef \ lfp^{\sqsubseteq_{\mathcal{T}}}_{\bot} \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}\\
+        t_{\curlyvee}(l)  \ &\eqdef \ \bigcurlyvee\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{o} ( m(l')) \\
+        \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ UNTIL\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket (t_{\curlyvee}(l))  \\\\
+        %
+        %
+        \tau^\sharp_{\exists(\Phi_1 U \Phi_2)} \ &\eqdef \ lfp^{\sqsubseteq_{\mathcal{T}}}_{\bot} \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}\\
+        t_{\sqcup}(l) \ &\eqdef \ \bigsqcup\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{u} (m(l')) \\
+        \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ UNTIL\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket ( t_{\sqcup}(l))
+    \end{align*}
+\end{definition}
 
 
 
