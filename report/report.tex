@@ -1055,7 +1055,7 @@ in section~\ref{sec:ctl_semantics} (definition~\ref{def:computational_order}).\\
 The \textit{approximation order} $\preceq_{\mathcal{T}}$ is used to define sound abstractions.
 
 \begin{definition}\label{def:sound_abstraction}
-    Let $\alpha \in \Sigma \rightarrow \mathbb{N}$ denote the abstraction function from ranking functions to decision trees.
+    Let $\alpha \in (\Sigma \rightarrow \mathbb{N}) \rightarrow \mathcal{T}$ denote the abstraction function from ranking functions to decision trees.
     A decision tree $t \in \mathcal{T}$ is a sound abstraction of a ranking function $f \in \Sigma \rightarrow \mathbb{N}$ if
     $\alpha(f) \preceq_{\mathcal{T}} t$.
 \end{definition}
@@ -1068,8 +1068,9 @@ Due to definition~\ref{def:sound_abstraction} we can use such a decision tree to
 Two trees can be joined to form the union of all partitions represented by the two trees. There are two variations of the join operator. 
 The \textit{computational join} $\sqcup_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$
 and the \textit{approximation join} $\curlyvee_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$. 
-The first one joins leaf nodes with $\sqsubseteq_{\mathcal{F}}$ the latter with $\preceq_{\mathcal{F}}$. Figure~\ref{fig:decision_tree_join_example} 
-demonstrates the difference between the two join types. When joining two trees where one leaf is defined and one is undefined 
+The first one joins leafs (by forming the smallest upper bound) with $\sqsubseteq_{\mathcal{F}}$ the latter with $\preceq_{\mathcal{F}}$. 
+Figure~\ref{fig:decision_tree_join_example} demonstrates the difference between the two join types. 
+When joining two trees where one leaf is defined and one is undefined 
 (see left leaf in $t_1$ and $t_2$), the \textit{computational join} will preserve the defined leaf
 and the \textit{approximation join} will make the leaf undefined. For detailed description of the two join types see~\cite{UrbanPhd}.
 
@@ -1156,7 +1157,7 @@ TODO
 
 
 \begin{algorithm}                      
-    \caption{Tree Join Helper (TODO not sure if ill new you here)}         
+    \caption{Tree Join Helper (TODO not sure if I need you )}         
     \label{alg:tree_join_helper}       
     \begin{algorithmic}
         \LineComment{$t_{left}, t_{right} \in \mathcal{T}_{NIL}$}
