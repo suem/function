@@ -40,10 +40,6 @@
  
 Motivation etc.
 
-This section introduces the necessary background for understanding the main concepts described in this thesis.
-Note that we assume that the reader already has a basic understanding of abstract interpretation. An detailed introduction into 
-the theory of abstract interpretation can be found in [TODO].
-
 
 \section{State Transition Systems}
 
@@ -52,7 +48,7 @@ to express said behavior through a mathematical model.
 We model the operational semantics of programs using transition systems. 
 This is based on the definitions presented in~\cite{UrbanM-VMCAI15}.
 
-\begin{definition}{Transition System}
+\begin{definition}
     A transition system is a tuple $\langle \Sigma, \tau \rangle$ where $\Sigma$ 
     is the set of all states in the system and $\tau \in \Sigma \times \Sigma$ 
     is the so called transition relations that defines how one can transition from one state to the other.
@@ -86,7 +82,7 @@ and state transitions as directed edges.
 
 
 We introduce the following auxiliary functions over states of a transition systems which will become 
-useful in section (TODO ref XY) where we defined the semantics of CTL operators in terms of transition systems.
+useful in section~\ref{sec:ctl_semantics} where we defined the semantics of CTL operators in terms of transition systems.
 
 \begin{definition}\label{def:pre}
     Given a transition system $\langle \Sigma, \tau \rangle$. $\text{pre} \colon \mathcal{P}(\Sigma) \to \mathcal{P}(\Sigma)$
@@ -123,7 +119,7 @@ This section gives a brief introduction into the syntax and semantic of CTL.
 Further information about CTL can be found in~\cite{baier2008principles}.
 
 \subsection{Syntax}
-The syntax of a CTL formula is given by the following grammar definition.
+The syntax of a CTL formula is given by the following grammar.
 
 \begin{align*}
     \Phi  ::= \ & \\ 
@@ -135,7 +131,8 @@ The syntax of a CTL formula is given by the following grammar definition.
     & \forall(\Phi \ U \ \Phi) | \ \exists(\Phi \ U \ \Phi) 
 \end{align*}
 
-The term $a$ is a placeholder for arbitrary atomic propositions.
+The term $a$ is a placeholder for arbitrary atomic propositions. Formulae with quantifiers $\exists$ or $\forall$ are called
+path-dependent, formulae without path-independent.
 
 \subsection{Semantic}
 
@@ -176,8 +173,9 @@ TODO
 \section{Ranking Functions}\label{sec:ranking_functions}
 
 The traditional approach for proving termination is based on inferring \textit{ranking functions}~\cite{Touring49}~\cite{Floyd67}.
-A ranking function is a partial function from program states to a well-ordered set (e.g.\ the natural numbers). 
-To prove termination, the values of the ranking functions must decrease during program execution. Therefore the value that a \textit{ranking function} assigns to a state is an upper bound on the number of steps until the program terminates.
+A ranking function is a partial function from program states to a well-ordered set. For simplicity reasons we will use natural numbers as example.
+To prove termination, the values of the ranking functions must decrease during program execution. 
+The value that a \textit{ranking function} assigns to a state is an upper bound on the number of steps until the program terminates.
 Cousot and Cousot prove the existence of a \textit{most precise ranking function} then can be derived 
 by abstract interpretation \cite{CousotCousot-POPL12}. The theory of abstract interpretation makes it possible to express 
 various aspects of the semantics of a program. In that context the \textit{most precise ranking function} for termination is called
@@ -190,8 +188,8 @@ the \textit{termination semantics}.
 \end{definition}
 
 By definition of the \textit{termination semantics}, a program will terminate if its initial state is in the domain of
-the ranking function. In other words, if the termination semantics assigns a natural value to the initial state that
-is an upper bound on the number of steps until termination.\\
+the ranking function. In other words, if the termination semantics assigns an upper bound on the number of steps until termination
+starting from the initial state.\\
 
 
 Based on the work of Cousot and Cousot~\cite{CousotCousot-POPL12}. Urban and Miné~\cite{UrbanM-VMCAI15} extended the 
@@ -199,7 +197,7 @@ Based on the work of Cousot and Cousot~\cite{CousotCousot-POPL12}. Urban and Min
 some state satisfying a given property is guaranteed to be reached eventually. Termination is therefore just a 
 guarantee property stating that some final state will be reached eventually. As with termination, 
 the \textit{guarantee semantics} is a ranking function that assigns each state an upper bound on the number of steps
-until a state satisfying the given property is reached.
+until a state satisfying said property is reached. Guarantee properties can be expressed using the CTL formula $\forall\lozenge(a)$
 
 \begin{definition}
     The \textit{guarantee semantics} is a ranking function 
@@ -213,6 +211,7 @@ In addition to guarantee properties, Urban and Miné~\cite{UrbanM-VMCAI15} also 
 A recurrence property guarantees that a program starting from some state $\sigma \in \Sigma$ will reach some state satisfying
 a given property infinitely often. The value assigned to a state by the \textit{recurrence semantics}
 is an upper bound on the number of executions steps until a state satisfying the property is reached the next time. 
+Recurrence properties can be expressed using the CTL formula $\forall\square\forall\lozenge(a)$.
 
 \begin{definition}
     The \textit{recurrence semantics} is a ranking function 
@@ -227,15 +226,17 @@ We illustrate the ranking functions by labeling the states in the transition sys
 The first example (a) shows the \textit{termination semantics} for a state transition system that always terminates. Therefore the initial state
 has the value $2$ assigned to it stating that this program terminates in at most two steps.\\
 
-The second example (b) shows the \textit{guarantee semantics} for the guarantee property that states that a gray state will be reached eventually.
+The second example (b) shows the \textit{guarantee semantics} for the guarantee property that states that a gray state will be reached eventually 
+($\forall\lozenge(\text{gray})$).
 This holds for example (b) therefore the initial state has the value $2$ assigned to it. The program reaches a gray state in at most two steps.\\
 
-The last example (c) shows the \textit{recurrence semantics} for the recurrence property that states that a gray state will be reached infinitely often.
-As one can see from the transition system, this is not true when starting from the initial state. Therefore the \textit{recurrence semantics} is undefined
+The last example (c) shows the \textit{recurrence semantics} for the recurrence property that states that a gray state will be reached infinitely often
+($\forall\square\forall\lozenge(\text{gray})$).
+As one can see in the transition system, this is not true when starting from the initial state. Therefore the \textit{recurrence semantics} is undefined
 for the initial state. However the property would hold when starting from state $c$ or $d$. 
 Accordingly these two states have the values $1$ and $0$ assigned to them.\\
 
-We refer to~\cite{UrbanPhd} for a detailed discussion of the various semantics presented in this session.
+We refer to~\cite{UrbanPhd} for a detailed discussion of the various semantics presented in this section.
 
 \begin{figure}
     \begin{subfigure}[b]{0.32\textwidth}
@@ -295,11 +296,11 @@ We refer to~\cite{UrbanPhd} for a detailed discussion of the various semantics p
 \end{figure}
 
 \section{Concrete Semantics for CTL}\label{sec:ctl_semantics}
-In section XY (TODO ref) we introduced the concept of ranking functions and explained how they express the semantics of 
+In section~\ref{sec:ranking_functions} we introduced the concept of ranking functions and explained how they express the semantics of 
 recurrence and guarantee properties. To be able to analyse CTL properties, we extend the notion of ranking functions to CTL. 
 Urban et al.~\cite{UrbanM-VMCAI15} define ranking functions for guarantee and recurrence properties.
-The CTL semantics presented here are an extension of this work. We will define the \textit{CTL semantics} inductively 
-for each CTL operator such that arbitrary combinations of CTL properties can be analyzed. 
+The \textit{CTL semantics} presented here are an extension of this work. We will define the \textit{CTL semantics} inductively 
+for each CTL operator such that arbitrary combinations of CTL properties can be expressed. 
 
 \begin{definition}
     The \textit{CTL semantics} for a given CTL formula $\Phi$ is a ranking function 
@@ -313,8 +314,8 @@ The definition of the concerete CTL semantics will be split into path dependent 
 \subsection{Path Independent Operators}
 
 We start by defining the \textit{CTL semantics} for atomic propositions and logic operators (see definition~\ref{def:ctl_semantics_basic}). 
-These CTL properties are path independent and can be defined independently for each state $\sigma \in \Sigma$.
-The definitions follow directly from the satisfiability relation for CTL properties (see section~\ref{sec:computation_tree_logic}). 
+These CTL properties are path independent and can be defined individually for each state $\sigma \in \Sigma$.
+The definitions follow directly from the satisfiability relation for CTL properties in section~\ref{sec:computation_tree_logic}. 
 
 \begin{definition}\label{def:ctl_semantics_basic}
     Equations for path independent CTL operators
@@ -352,8 +353,8 @@ The definitions follow directly from the satisfiability relation for CTL propert
 
 \subsection{Path Dependent Operators}
 
-CTL semantics for path dependent operators `until' and `global' are be defined in terms of fixed-points. 
-These fixed-points are defined for the partially ordered set of ranking functions $\langle \Sigma \rightarrow \mathbb{N}, \sqsubseteq \rangle$. 
+\textit{CTL semantics} for path dependent operators `until' and `global' are defined in terms of fixed-points. 
+These fixed-points are defined over the partially ordered set of ranking functions $\langle \Sigma \rightarrow \mathbb{N}, \sqsubseteq \rangle$. 
 Ranking functions are related to each other using the \textit{computational order} $\sqsubseteq$. 
 This partial order relates ranking functions in terms of expressiveness i.e.\ for how many states can a ranking function prove that the CTL property holds.
 
@@ -361,17 +362,17 @@ This partial order relates ranking functions in terms of expressiveness i.e.\ fo
     Let $f, g \in \Sigma \rightarrow \mathbb{N}$. 
     The \textit{computational order} $\sqsubseteq$ is defined as follows.
     \begin{align*}
-        f \sqsubseteq g \iff \text{dom}(f) \subseteq \text{dom}(g) \land \forall x \text{dom}(f): f(x) \leq g(x) \\
+        f \sqsubseteq g \iff \text{dom}(f) \subseteq \text{dom}(g) \land \forall x \in \text{dom}(f): f(x) \leq g(x) \\
     \end{align*}
 \end{definition}
 
 \subsubsection*{Until}
 
-The CTL semantics for universal and existential `until' properties are defined as least fixed-point of the abstract transformers
-\[
-\phi_{\forall(\Phi_1 U \Phi_2)}, \phi_{\exists(\Phi_1 U \Phi_2)} 
-\in (\Sigma \rightarrow \mathbb{N}) \rightarrow (\Sigma \rightarrow \mathbb{N}))
-\]
+The \textit{CTL semantics} for universal and existential `until' properties are defined as least fixed-point of the abstract transformers
+\begin{align*}
+\phi_{\forall(\Phi_1 U \Phi_2)} &\in (\Sigma \rightarrow \mathbb{N}) \rightarrow (\Sigma \rightarrow \mathbb{N}))\\
+\phi_{\exists(\Phi_1 U \Phi_2)} &\in (\Sigma \rightarrow \mathbb{N}) \rightarrow (\Sigma \rightarrow \mathbb{N}))
+\end{align*}
 
 starting from the totally undefined ranking function $\overset{.}{\emptyset}$ (see definition~\ref{def:ctl_semantics_until}).
 This definition is an generalization of the \textit{guarantee semantics} presented in~\cite{UrbanM-VMCAI15}. 
@@ -409,26 +410,26 @@ This definition is an generalization of the \textit{guarantee semantics} present
 
 
 Recall that for the CTL property $\forall(\Phi_1 U \Phi_2)$ to hold for some state $\sigma \in \Sigma$, 
-all paths starting from said state must be a chain of states satisfying $\Phi_1$ ending in a state satisfying $\Phi_2$.
+all paths starting from said state must form a chain of states satisfying $\Phi_1$ ending in a state satisfying $\Phi_2$.
 The fixed-point iteration starts by assigning the value $0$ to all states that satisfy $\Phi_2$. 
 In subsequent iterations we consider all states that satisfy $\Phi_1$, and from which one can only transition to states that already satisfy  
 $\forall(\Phi_1 U \Phi_2)$. These states are then assigned the largest ranking value of all reachable states plus one. 
 By performing iterations this way, we backtrack paths in the state transition systems that end in a state satisfying $\Phi_2$ and which are preceded by an 
-unbroken chain of states satisfying $\Phi_1$. Every state on such a path is guaranteed to satisfy the CTL `until' property. 
-Furthermore, by starting from $0$ at states that satisfy $\Phi_2$ and increasing while backtracking, 
-we are constructing a ranking function in such a way that the value assigned to each state is an 
-upper bound on the number of steps until a state is reached that satisfies $\Phi_2$.\\
+unbroken chain of states satisfying $\Phi_1$. Every state on such a path is guaranteed to satisfy $\forall(\Phi_1 U \Phi_2)$. 
+Furthermore, by starting from $0$ at states that satisfy $\Phi_2$ and incrementing while backtracking, 
+we construct a ranking function sucht that the value assigned to each state is an 
+upper bound on the number of steps until a state satisfying $\Phi_2$ is reached.\\
 
-The $\widetilde{pre}$ relation guarantees that during the backtracking, only those states are considered which 
+The $\widetilde{pre}$ relation guarantees that during the backtracking only those states are considered which 
 exclusively transition to states satisfying $\forall(\Phi_1 U \Phi_2)$. 
 This condition can be relaxed for existential `until' properties by using the $pre$ relation instead. 
 That way, states that have at least one reachable state satisfying $\exists(\Phi_1 U \Phi_2)$ are also considered 
 during the backtracking (see definitions~\ref{def:pre} and~\ref{def:tilde_pre}).\\
 
 Figures~\ref{fig:ctl_semantics_universal_until} and~\ref{fig:ctl_semantics_existential_until} give an example on how the
-iterative computation for `until' works for universal and existential properties. 
+iterative computation for `until' properties works for universal and existential quantifiers. 
 Note how figure~\ref{fig:ctl_semantics_existential_until} has one additional iteration because of the existential quantifier. 
-The initial state is added to ranking function in the last iteration because there exists one edge that leads to a state satisfying the property.  
+The initial state is added to the ranking function in the last iteration because there exists one edge that leads to a state satisfying the property.  
 For the universal property, the iteration stops after three iterations because not all successor states
 of the initial state satisfy the property.
 
@@ -649,10 +650,10 @@ of the initial state satisfy the property.
 \subsubsection*{Global}
 
 The CTL semantics for universal and existential `global' properties are defined as greates fixed-point of the abstract transformers
-\[
-\phi_{\forall(\Phi_1 U \Phi_2)}, \phi_{\exists(\Phi_1 U \Phi_2)} 
-\in (\Sigma \rightarrow \mathbb{N}) \rightarrow (\Sigma \rightarrow \mathbb{N}))
-\]
+\begin{align*}
+    \phi_{\forall(\Phi_1 U \Phi_2)} \in (\Sigma \rightarrow \mathbb{N}) \rightarrow (\Sigma \rightarrow \mathbb{N}))\\
+    \phi_{\exists(\Phi_1 U \Phi_2)} \in (\Sigma \rightarrow \mathbb{N}) \rightarrow (\Sigma \rightarrow \mathbb{N}))
+\end{align*}
 starting from the CTL semantics $\tau_\Phi$ of the inner CTL property (see definition~\ref{def:ctl_semantics_global}).
 This definition is based on the \textit{recurrence semantics} presented in~\cite{UrbanM-VMCAI15}.
 
@@ -680,20 +681,18 @@ The CTL `global' operator states that some property must hold globally i.e. inde
 \textit{all} paths starting from some state in the case of the universal
 quantifier ($\forall\square\Phi$) or \textit{some} path in case of the existential quantifier ($\exists\square\Phi$). 
 As with the `until' operator, we distinguish between universal and existential properties by using either $\widetilde{pre}$ or $pre$. 
-The fixed-point iteration starts with the ranking function $\tau_\Phi$ of the inner property.
+The fixed-point iteration starts with the ranking function $\tau_\Phi$ of the inner property $\Phi$.
 In each iteration, every state that is still part of the domain of the ranking function is inspected. 
 The inspected state is kept in the domain of the ranking function if \textit{all} its successor states 
 (or \textit{some} for the existential case) are also part of the domain of the ranking function, otherwise it is removed.
 That way, only those states are kept in the ranking function which are part of an infinite path consisting exclusively of states satisfying $\Phi$.\\
 
-Figures~\ref{fig:ctl_semantics_universal_global} and~\ref{fig:ctl_semantics_existential_global} give an example iteration for 
+Figures~\ref{fig:ctl_semantics_universal_global} and~\ref{fig:ctl_semantics_existential_global} show this for 
 $\tau_{\exists\square\Phi}$ and $\tau_{\forall\square\Phi}$. Both iterations start with some initial ranking function $\tau_\Phi$.
 In the first iteration state `b' is removed because it has no outgoing edges. For the existential case, the iteration stops here because
-all remaining states `a', `c' and `'d' have at least one edge to a node thats part of the ranking function. In the universal case we get an additional
+all remaining states `a', `c' and `d' have at least one edge to a node thats part of the ranking function. In the universal case we get an additional
 iteration that removes state `a' because not all of its successor nodes (namely `b') are part of the ranking function. 
-
-Note that the way $\tau_{\forall\square\Phi}$ and $\tau_{\exists\square\Phi}$ are defined, 
-it is not possible to use the `global' operator on finite paths. Only infinite paths are considered to hold globally. 
+Note that only infinite paths are considered to hold globally. 
 
 
 \begin{figure}
@@ -795,11 +794,11 @@ it is not possible to use the `global' operator on finite paths. Only infinite p
 
 \subsubsection*{Next}
 
-Definition~\ref{def:ctl_semantics_next} defines the CTL `next' operator. The `next' operator is path dependent but it 
-is not defined in terms of fixed-point iterations. A state satisfies $\forall\bigcirc\Phi$ if all its successors satisfy the property,
-correspondingly $\exists\bigcirc\Phi$ is satisfied if at least one successor satisfies the property. 
+Definition~\ref{def:ctl_semantics_next} defines the CTL `next' operator. The `next' operator is path dependent but does not
+require fixed-point iterations. A state satisfies $\forall\bigcirc\Phi$ if all its successors satisfy the property $\Phi$,
+correspondingly $\exists\bigcirc\Phi$ is satisfied if at least one successor satisfies the property $\Phi$. 
 This corresonds to the definition of the $\widetilde{pre}$ and $pre$ relations. Zero is assigned to each state
-that satisfies the property. 
+that satisfies the property to construct a valid ranking function.
 
 \begin{definition}\label{def:ctl_semantics_next}
     Equations for CTL next operator
@@ -823,15 +822,14 @@ that satisfies the property.
 
 In this section we briefly introduce a minimal imperative programming language. 
 It will be used in section~\ref{sec:abstract_ctl_semantics} to define the abstract CTL semantics.
-The language has no procedures, pointers or recursion. It is non-deterministic.
-Variables are integer valued ($\mathbb{Z}$) and statically allocated. 
-
+The language has no procedures, pointers or recursion and is non-deterministic.
+Variables are integer valued ($\mathbb{Z}$) and statically allocated.\\
 
 First we define the syntax for arithmetic and boolean expressions. 
 The syntax definitions are based on chapter 3 of~\cite{UrbanPhd}.
 
 \begin{definition}\label{def:arith_bool_syntax}
-    Syntax for arithmetic and boolean expressions. 
+    Syntax for arithmetic and boolean expressions. \\
     Arithmetic expressions are defined over a set of variables $\mathcal{X}$.
     \begin{align*}
         \setlength{\jot}{15pt}
@@ -852,14 +850,14 @@ The semantics for expressions are defined as expected.
 Please refer to~\cite{UrbanPhd} for a formal definition. 
 Note that the symbol `?' stands for non-deterministic choice.\\
 
-Programs are represented as control-flow-graphs (CFG) (see definition~\ref{def:control_flow_graph}). 
+Programs are modeled as control-flow-graphs (CFG) (see definition~\ref{def:control_flow_graph}). 
 A control-flow-graph $(V, E) \in cfg$ consists of a set of nodes $V$ and edges $E$.
 Every control point of a program is assigned a label $l \in \mathcal{L}$. 
 The nodes in the control-flow-graph correspond to those labels. 
 An edge $(u, s, v) \in edge$ states that one can transition from node
 $u$ to $v$ by executing statement $s$. 
-The \texttt{skip} statements 
-transitions from one node to another without doing anything, the boolean expression $bexp$ limits the set of states
+The \texttt{skip} statement transitions from one node to another without doing anything, 
+the boolean expression $bexp$ limits the set of states
 that are allowed to transition to the next node and the assignment $X := aexp$ assigns the value of the arithmetic expression $aexp$
 to the variable $X$. A program $(\text{cfg}, l_{entry}, l_{exit}) \in prog$ consists of a control-flow-graph and two special 
 nodes that defined the entry and exit point of the program.
@@ -879,11 +877,11 @@ nodes that defined the entry and exit point of the program.
     \end{align*}
 \end{definition}
 
-We introduce the following auxiliary functions on nodes of a control-flow-graph $(V, E) \in cfg$ 
-to refere to the incoming and outgoing edges of a node $l \in V$.
+We introduce the following auxiliary functions on nodes of a control-flow-graph to 
+refere to the incoming and outgoing edges of a node.
 
 \begin{definition}\label{def:cfg_in}
-    Given a control-flow-graph $(V, E) \in cfg$ 
+    Given a control-flow-graph $(V, E) \in cfg$ and some node $l \in V$
     \begin{align*}
         in(l) &\eqdef \{(u, s, v) \in E \ | \ v = l \}\\
         out(l) &\eqdef \{(u, s, v) \in E \ | \ u = l \}\\
@@ -902,7 +900,7 @@ An in-depth description of the topics covered in this section can be found in~\c
 
 \subsection{Domain}
 
-The elements of abstract domain are binary decision trees. The nodes of the trees are linear constrains and the leafs are linear functions.
+The elements of the abstract domain are binary decision trees. The nodes of the trees are linear constrains and the leafs are linear functions.
 Decision trees partition a state space, given by a set of variables $\mathcal{X}$, into linear partitions. 
 Each partition is defined through the conjunction of linear constraints on the path from root to leaf in the decision tree.
 The linear function at the leaf determines the value of the ranking function for the corresponding partition of the state space.\\
@@ -1009,7 +1007,7 @@ This adds an additional leaf element \texttt{NIL} to $\mathcal{T}$ to represent 
 
 \subsubsection*{Orders \& Abstractions}
 
-Decision trees will be used as an abstraction of ranking functions. It is important to be able to reason about the soundness of this abstraction.
+Decision trees are used as an abstraction of ranking functions. It is important to be able to reason about the soundness of this abstraction.
 For that purpose we will now introduce a number of partial orders which are then used to express soundness.
 
 For the elements of $\mathcal{F}$ we defined the \textit{computational order} $\sqsubseteq_{\mathcal{F}}$ 
@@ -1065,7 +1063,9 @@ Due to definition~\ref{def:sound_abstraction} we can use such a decision tree to
 
 
 \subsection{Join}\label{sec:tree_join}
-Two trees can be joined to form the union of all partitions represented by the two trees. There are two variations of the join operator. 
+Two trees can be joined to form the union of all partitions represented by the two trees. When joining two trees, they are first reshaped such
+that both trees consist of the same partitions. They only differ in the valus of the leafs. Then the two trees can be joined leaf-wise. 
+There are two join variations. 
 The \textit{computational join} $\sqcup_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$
 and the \textit{approximation join} $\curlyvee_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$. 
 The first one joins leafs (by forming the smallest upper bound) with $\sqsubseteq_{\mathcal{F}}$ the latter with $\preceq_{\mathcal{F}}$. 
@@ -1144,60 +1144,48 @@ and the \textit{approximation join} will make the leaf undefined. For detailed d
 \end{figure}
 
 \subsection{Meet}\label{sec:tree_meet}
+The meet operator intersects the partitions of two decision trees. As with the join, both trees are first
+brought into the same shape such that they can be combined leaf-wise. There are two meet variations. 
+The \textit{computational meet} $\mathtt{MEET}_\sqsubseteq \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$
+and the \textit{approximation meet} $\mathtt{MEET}_\preceq \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$. 
+Both combine defined leafs using the smallest upper bound according to $\preceq_{\mathcal{F}}$. 
+If at least one of the two leafs is \texttt{NIL}, then the result is $\bot_\mathcal{F}$ in case of the 
+\textit{computational meet} and \texttt{NIL} in case of the \textit{approximation meet}.
+
 
 \subsection{Filter}
-TODO
+The filter operator $\mathtt{FILTER}\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$
+prunes all partitions of a decision tree that do not satisfy a given boolean expression. Leafs are pruned by replacing them with \texttt{NIL}.
+The regular version of \texttt{FILTER} prunes the partitions using overapproximation. 
+That means that the resulting tree can still contain states that do not satisfy the boolean expression. It is however guaranteed that all states 
+that satisfy the boolean expression remain in the tree. In addition to the overapproximating version there is also the underapproximating version
+$\mathtt{FILTER\_UNDER}\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$. Here the resulting decision
+tree is guaranteed to not contain any partitions that do not satisfy the boolean expressions. States that do satisfy it might be removed however if
+the underlying numerical domain is not expressive enough.
 
 \subsection{Reset}
-TODO
+The $\mathtt{RESET}\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$ operator can be used
+to reset the value of the ranking function to zero for all partitons that satisfy the boolean expression. This operator has the same implementation
+as $\mathtt{FILTER\_UNDER}\llbracket bexp \rrbracket$ but replaces leafs that do not satisfy the property with the constant function
+$0$. Furthermore it uses undreapproximation to guarantee that only those partitions are reset that actually satisfy the boolean expression. 
 
 \subsection{Backward Assign}
-TODO
+The operator $\mathtt{B\_ASSIGN}\llbracket X \colon = \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$ handles
+the backward assignment of the arithmetic expression \texttt{aexp} to variable $X$. The linear constraints of the decission tree nodes and the 
+functions at the leafs are adjusted accordingly. $\mathtt{B\_ASSIGN}$ uses overapproximation on the underlying numerical domains. 
+As with the $\mathtt{FILTER}$ operator, there also exists an underapproximating version 
+$\mathtt{B\_ASSIGN\_UNDER}\llbracket X \colon = \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$.
 
 
-
-\begin{algorithm}                      
-    \caption{Tree Join Helper (TODO not sure if I need you )}         
-    \label{alg:tree_join_helper}       
-    \begin{algorithmic}
-        \LineComment{$t_{left}, t_{right} \in \mathcal{T}_{NIL}$}
-        \LineComment{$f_{LEAF} \in \mathcal{P}(\mathcal{C}) \rightarrow \mathcal{F} \rightarrow \mathcal{F} \rightarrow \mathcal{T} $}
-        \LineComment{$f_{LeftNIL}, f_{RightNIL} \in \mathcal{P}(\mathcal{C}) \rightarrow \mathcal{F} \rightarrow \mathcal{T} $}
-        \Function{tree\_join\_helper}{$t_{left}, t_{right}, f_{LEAF}, f_{LeftNIL}, f_{RightNIL}$} 
-
-        \Function{aux}{$t_l, t_r, C$} 
-
-        \If{$isNil(t_l) \land isNil(t_r)$}
-            \State \Return $NIL$
-        \ElsIf{$isNil(t_l) \land isLeaf(t_r)$}
-            \State \Return $f_{LeftNIL}(C, t_r.f)$
-        \ElsIf{$isLeaf(t_l) \land isNil(t_r)$}
-            \State \Return $f_{RightNIL}(C, t_l.f)$
-        \ElsIf{$isLeaf(t_l) \land isLeaf(t_r)$}
-            \State \Return $f_{LEAF}(C, t_l.f t_r.f)$
-        \Else
-            \Comment{assert $t_l.c = t_r.c$}
-            \State $l \gets \Call{aux}{t_l.l, t_r.l,  \{t_l.c\} \cup C}$
-            \State $r \gets \Call{aux}{t_l.r, t_r.r, \{\neg t_l.c\} \cup C}$
-            \State \Return $NODE\{t_l.c\} \colon l ; r $
-        \EndIf
-
-        \EndFunction
-
-        \State $(t_l, t_r) \gets \Call{tree\_unification}{t_{left}, t_{right}}$
-        \State \Return \Call{aux}{$t_l, t_r$}
-        \EndFunction
-\end{algorithmic}
-\end{algorithm}
 
 
 
 
 \section{Abstract Semantics for CTL}\label{sec:abstract_ctl_semantics}
 
-In this section we present a sound, computable approximation of the CTL semantics $\tau_\Phi$.
+In this section we present a sound and computable approximation of the \textit{CTL semantics} $\tau_\Phi$ defined in section~\ref{sec:ctl_semantics}.
 Computing the ranking function $\tau_\Phi$ is in general not computable as one can easily encode the 
-halting problem in $\tau_\Phi$. Therefore, we approximation $\tau_\Phi$ by using
+halting problem. Therefore, we approximation $\tau_\Phi$ by using
 the decision tree abstract domain (section~\ref{sec:decision_tree_abstract_domain}) to approximate ranking functions 
 in terms of piecewise defined ranking functions.
 
@@ -1210,27 +1198,26 @@ Recall that the CTL semantics $\tau_\Phi \in \Sigma \rightarrow \mathbb{N}$ is a
 assigns numerical values to program states $\sigma \in \Sigma$. 
 In the abstract version, program states are partitioned by decision trees $t \in \mathcal{T}$ and 
 grouped by program labels $l \in \mathcal{L}$. A program satisfies a given CTL property $\Phi$ if the decision tree of the
-initial program label $\tau^{\sharp}_\Phi(t_{init})$ is defined over all partitions 
-(TODO introduce notion of defined w.r.t decision trees).
-\\
+initial program label $\tau^{\sharp}_\Phi(t_{init})$ is defined over all partitions i.e.\ all leafs of the decision tree are defined.\\
 
 The following sections present how to compute $\tau^{\sharp}_\Phi$ for each CTL operator. 
 We start with the basic operators $\land, \lor, \neg$ and atomic propositions. 
 These can be computed directly for each program label. 
-Then we present how to compute the universal $\forall U$, $\forall\bigcirc$ and $\forall\square$ operators through fixed-point iteration. 
+Then we present how to compute the universal $\forall(\cdot U \cdot)$, $\forall\bigcirc$ and $\forall\square$ operators through fixed-point iteration. 
 Followed by a discussion on how to adapt the universal operators to their existential version. 
 Note that the abstract CTL semantics are computed recursively. The recursion stops at atomic propositions.
 
 \subsection{Path Independent Operators}
 
 Atomic propositions are path independent, therefore $\tau^{\sharp}_a$ assigns the same decision tree to 
-each program label $l \in \mathcal{L}$. This decision tree assigns the constant value $0$ to all partitions that satisfy the atomic proposition $a$.
-We compute this tree by using the $\text{RESET} \llbracket a \rrbracket$ operator on the totally undefined decision tree $\bot$ (see section XY TODO). 
+each program label $l \in \mathcal{L}$. This decision tree assigns the constant function $0$ to all partitions that satisfy the atomic proposition $a$.
+We compute this tree by using the $\text{RESET} \llbracket a \rrbracket$ operator on the totally undefined decision tree $\bot_\mathcal{T}$. 
+
 
 \begin{definition}\label{def:abstract_ctl_semantics_atomic}
     Abstract CTL semantics for atomic propositions
     \begin{align}
-        \tau^{\sharp}_{a} \eqdef \ \lambda l. \ \text{RESET} \llbracket a \rrbracket \bot
+        \tau^{\sharp}_{a} \eqdef \ \lambda l. \ \text{RESET} \llbracket a \rrbracket \bot_\mathcal{T}
     \end{align}
 \end{definition}
 
@@ -1242,14 +1229,14 @@ We compute this tree by using the $\text{RESET} \llbracket a \rrbracket$ operato
     During the work on this thesis, we discovered that this original definition is actually unsound and leads to incorrect analysis results. \\
     
     The problem is best described using an example. Consider the abstract CTL semantics $\tau^{\sharp}_{x^2 < y^3 + 1}$. 
-    The non linear constraint $x^2 < y^3 + 1$ can usually not be represented by any of the common numerical domains. 
+    The non-linear constraint $x^2 < y^3 + 1$ can usually not be represented by any of the common numerical domains. 
     An overapproximating implementation of $\text{RESET}\llbracket x^2 < y^3 + 1 \rrbracket$ will therefore
     reset some pairs $(x, y)$ for which $x^2 < y^3 + 1$ does not hold which is unsound as to the definition of
     the CTL semantics $\tau_{x^2 < y^3 + 1}$. Note that this problem propagates to more complex temporal properties that
     depend on atomic propositions.\\
 
     We resolve this problem by using an underapproximating implementation of $\text{RESET}$ as presented
-    in section XY (TODO ref).
+    in section~\ref{sec:decision_tree_abstract_domain}.
 \end{tcolorbox}
 
 Now we define the abstract CTL semantics for the logical operators $\land$, $\lor$ and $\neg$.
@@ -1278,16 +1265,16 @@ The corresponding definition for the logical $\land$ operator forms the intersec
 \textit{computational meet} $\sqcap_{\mathcal{T}}$ (see section~\ref{sec:tree_meet}). 
 As with the logical $\lor$, the smallest upper bound is formed if a partition is defined in both trees. 
 By using the computational version of the operator, 
-we ensure that no $NIL$ leafs are introduced when forming the intersection.\\
+we ensure that no $\mathtt{NIL}$ leafs are introduced when forming the intersection.\\
 
-For the logical $\neg$ operator we introduce the $\text{COMPLEMENT}$ operator. 
-This operator replaces all defined leafs with a $\bot$-leaf and all $\bot$-leafs with the constant value $0$.
+For the logical $\neg$ operator we introduce the $\mathtt{COMPLEMENT}\colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$ operator. 
+This operator replaces all defined leafs with a $\bot$-leaf and all $\bot$-leafs with the constant function $0$.
 By doing so, all states that originally satisfied the property do not satisfy it any more and vice-versa.
 However one has to be careful when changing a partition from undefined to defined. Decision trees are an 
 approximation of the concrete CTL semantics. Therefore not all states that are undefined in the abstract decision tree
 are actually undefined in the concrete ranking function. Partitions that are undefined because of this uncertainty are marked with a 
 $\top$-leaf. To ensure soundness, these leafs have to be ignored when forming the complement of a decision tree.   
-The $\text{COMPLEMENT}$ operator is implemented in algorithm~\ref{alg:tree_complement}.
+The $\mathtt{COMPLEMENT}$ operator is implemented in algorithm~\ref{alg:tree_complement}.
 
 \begin{algorithm}                      
     \caption{Tree Complement}         
@@ -1351,18 +1338,20 @@ partitions in the decision tree by one (see XY TODO). Recall that a defined part
 some CTL property. The associated value is an upper bound on the number of steps until some condition is reached. 
 By executing \texttt{skip} this number is incremented by one.
 For assignments and boolean conditions we use the corresponding B-ASSIGN and FILTER 
-operators that were introduced in section~\ref{sec:decision_tree_abstract_domain}.\\
-
-The definitons for the remaining path dependent operators all depend on $\llbracket \cdot \rrbracket$.
+operators that were introduced in section~\ref{sec:decision_tree_abstract_domain}.
+The definitons for the remaining path dependent operators all depend on these two functions.
 
 \subsubsection*{Until}
 The abstract CTL semantics for universal and existential `until' properties are defined as the least fixed-point of the abstract transformers
-\[
-\phi^\sharp_{\forall(\Phi_1 U \Phi_2)}, \phi^\sharp_{\exists(\Phi_1 U \Phi_2)} 
-\in (\mathcal{L} \rightarrow \mathcal{T}_{NIL}) \rightarrow (\mathcal{L} \rightarrow \mathcal{T}_{NIL})
-\]
+
+\begin{align*}
+    \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}
+    \in (\mathcal{L} \rightarrow \mathcal{T}_{NIL}) \rightarrow (\mathcal{L} \rightarrow \mathcal{T}_{NIL})\\
+    \phi^\sharp_{\exists(\Phi_1 U \Phi_2)} 
+    \in (\mathcal{L} \rightarrow \mathcal{T}_{NIL}) \rightarrow (\mathcal{L} \rightarrow \mathcal{T}_{NIL})
+\end{align*}
 starting from the 
-totally undefind decision tree $\bot$ (see definition~\ref{def:abstract_until_semantics}).
+totally undefind decision tree $\bot_\mathcal{T}$ (see definition~\ref{def:abstract_until_semantics}).
 We will first discuss the universal version and then explain what changes for the existential case.\\
 
 \begin{definition}\label{def:abstract_until_semantics}
@@ -1402,15 +1391,15 @@ among that path in the control-flow-graph. For the universal case however, this 
 Partitions that are unfeasible among some paths are discarded.\\
 
 Finally the result of joining the decision trees of the immediate predecessors are 
-applied to he $UNTIL\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket $ operator. 
-The purpose of his operator is to implement the semantics of the `until' operator. 
+applied to he $\mathtt{UNTIL}\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket $ operator. 
+The purpose of his operator is to implement the semantics of the `until' CTL operator. 
 All partitions that satisfy $\Phi_1$ are set to zero and all partitions that neither 
 satisfy $\Phi_1$ nor $\Phi_2$ are discarded (see algorithm~\ref{alg:tree_until}).
 That way we end up with a decision tree that is only defined for those partitions which satisfy $\forall(\Phi_1 U \Phi_2)$.\\
 
 
 The abstract tansformer for the existential case follows the same structure as in the universal case. 
-Instead of using the \textit{approximation join} it uses the \textit{computational join} $\sqcup$ 
+However instead of using the \textit{approximation join} it uses the \textit{computational join} $\sqcup_\mathcal{T}$ 
 to approximate the semantics of the $\exists$ path quantifier. 
 The \textit{computational join} preserves all partitions that are defined for at least one decision tree. 
 Note however, that all decision trees passed to the \textit{computation join} must be sound since we can no longer 
@@ -1424,7 +1413,7 @@ The abstract CTL semantics for universal and existential `global' properties are
     \phi^\sharp_{\forall\square\Phi}, \phi^\sharp_{\exists\square\Phi} 
 \in (\mathcal{L} \rightarrow \mathcal{T}_{NIL}) \rightarrow (\mathcal{L} \rightarrow \mathcal{T}_{NIL})
 \]
-starting from the abstract CTL semantics $\tau^\sharp_\Phi$ of the inner CTL property (see definition~\ref{def:abstract_global_semantics}).
+starting from the abstract CTL semantics $\tau^\sharp_\Phi$ of the inner CTL property $\Phi$ (see definition~\ref{def:abstract_global_semantics}).
 
 \begin{definition}\label{def:abstract_global_semantics}
     Abstract semantics for `global' operator.
@@ -1443,7 +1432,7 @@ starting from the abstract CTL semantics $\tau^\sharp_\Phi$ of the inner CTL pro
 The abstract transformer for the `global' operator uses the same approach as the `until' operator to join outgoing edges w.r.t $\forall$ and $\exists$.
 In the final step however, the current decision tree $m(l)$ is masked with the updated decision tree $t_{\curlyvee}(l)$ and $t_{\sqcup}(l)$.
 Masking means the all defined partitions in $m(l)$ that are not also defined in $t_{\curlyvee}(l)$ (or $t_{\sqcup}(l)$) are discarded. 
-Note that the decision tree $\tau^\sharp_\Phi(l_{exit})$ is the totally undefind decision tree $\bot$.
+Note that the decision tree $\tau^\sharp_\Phi(l_{exit})$ is the totally undefind decision tree $\bot_\mathcal{T}$.
 That way all states that do not satisfy $\Phi$ indefinitely among all (or some) paths are iteratively 
 removed from the decision tree until a fixed-point is reached. 
 The \texttt{MASK} operator is defined in algorithm~\ref{alg:tree_mask}.
