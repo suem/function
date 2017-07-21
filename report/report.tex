@@ -142,27 +142,40 @@ path-dependent, formulae without path-independent.
 \subsection{Semantic}
 
 We now define the satisfaction relation $\models$ between states $\sigma \in \Sigma$ and CTL formulae.
-The satisfaction relation for atomic propositions depends on the semantics of the underlying 
+The satisfaction relation for atomic propositions is assumed to be given by the underlying 
 logic for atomic propositions.
 
 \begin{align*}
-    \sigma \models \neg \Phi  &\iff \text{not} \ \sigma \models \Phi \\ 
-    \sigma \models \Phi_1 \land \Phi_2   &\iff (\sigma \models \Phi_1) \ \text{and} \ (\sigma \models \Phi_1) \\ 
-    \sigma \models \Phi_1 \lor \Phi_2   &\iff (\sigma \models \Phi_1) \ \text{or} \ (\sigma \models \Phi_1) \\ 
-    \sigma \models \forall\bigcirc\Phi &\iff \ \forall \pi \in Paths(\sigma) \colon (\pi [1] \models \Phi) \\ 
-    \sigma \models \exists\bigcirc\Phi &\iff \ \exists \pi \in Paths(\sigma) \colon (\pi [1] \models \Phi) \\ 
-    \sigma \models \forall(\Phi_1 \ U \ \Phi_2) &\iff \ \forall \pi \in Paths(\sigma) \colon 
-    (\exists j \geq 0 \colon \pi[j] \models \Phi_2 \land (\forall 0 \leq k < j \colon \pi[k] \models \Phi_1)) \\ 
-    \sigma \models \exists(\Phi_1 \ U \ \Phi_2) &\iff \ \exists \pi \in Paths(\sigma) \colon 
-    (\exists j \geq 0 \colon \pi[j] \models \Phi_2 \land (\forall 0 \leq k < j \colon \pi[k] \models \Phi_1)) \\ 
-    \sigma \models \forall\square\Phi &\iff \ \forall \pi \in Paths(\sigma) \colon (\forall j \geq 0 \colon \pi[j] \models \Phi) \\ 
-    \sigma \models \exists\square\Phi &\iff \ \exists \pi \in Paths(\sigma) \colon (\forall j \geq 0 \colon \pi[j] \models \Phi) \\ 
+    \sigma \models a  \iff &\sigma \models a \\ 
+    \sigma \models \neg \Phi  \iff &\text{not} \ \sigma \models \Phi \\ 
+    \sigma \models \Phi_1 \land \Phi_2   \iff &(\sigma \models \Phi_1) \ \text{and} \ (\sigma \models \Phi_1) \\ 
+    \sigma \models \Phi_1 \lor \Phi_2   \iff &(\sigma \models \Phi_1) \ \text{or} \ (\sigma \models \Phi_1) \\ 
+    \sigma \models \forall\bigcirc\Phi \iff  &\forall \pi \in Paths(\sigma) \colon (\pi [1] \models \Phi) \\ 
+    \sigma \models \exists\bigcirc\Phi \iff  &\exists \pi \in Paths(\sigma) \colon (\pi [1] \models \Phi) \\ 
+    \sigma \models \forall(\Phi_1 \ U \ \Phi_2) \iff &\forall \pi \in Paths(\sigma) \colon \\
+    &(\exists j \geq 0 \colon \pi[j] \models \Phi_2 \land (\forall 0 \leq k < j \colon \pi[k] \models \Phi_1)) \\ 
+    \sigma \models \exists(\Phi_1 \ U \ \Phi_2) \iff &\exists \pi \in Paths(\sigma) \colon\\
+    &(\exists j \geq 0 \colon \pi[j] \models \Phi_2 \land (\forall 0 \leq k < j \colon \pi[k] \models \Phi_1)) \\ 
+    \sigma \models \forall\square\Phi \iff  &\forall \pi \in Paths(\sigma) \colon (\forall j \geq 0 \colon \pi[j] \models \Phi) \\ 
+    \sigma \models \exists\square\Phi \iff  &\exists \pi \in Paths(\sigma) \colon (\forall j \geq 0 \colon \pi[j] \models \Phi) \\ 
 \end{align*}
 
 The states $\sigma \in \Sigma$ are part of a state transition system $\langle \Sigma, \tau \rangle$ and 
 $Paths(\sigma_0)$ is the set of all paths $\pi = \sigma_0 \sigma_1 \sigma_2 \dots$ starting from $\sigma_0$ with $\pi[j] = \sigma_j$.
 The CTL formulae $\forall\lozenge\Phi$ and $\exists\lozenge\Phi$ are not defined for $\models$ as they are equivalent to 
-$\forall(true \ U \ \Phi)$ and $\exists(true \ U \ \Phi)$. Furthermore the following useful equivalence relations 
+$\forall(true \ U \ \Phi)$ and $\exists(true \ U \ \Phi)$. \\
+
+Properties $\forall(\Phi_1 \ U \ \Phi_2)$ and $\exists(\Phi_1 \ U \ \Phi_2)$ are called \textsf{until} properties. They state that 
+all (some, respectively) reachable paths form a chain of states satisfying $\Phi_1$ up until a state is reached that satisfies $\Phi_2$.
+It is also possible to reach a state that satisfies $\Phi_2$ directly without passing states satisfying $\Phi_1$.\\
+
+Properties $\forall\square\Phi$ and $\exists\square\Phi$ are called \textsf{global} properties. They state that all states among 
+all (some, respectively) reachable paths globally satisfy the property $\Phi$.\\
+
+Properties $\forall\bigcirc\Phi$ and $\exists\bigcirc\Phi$ are called \textsf{next} properties. They state that all (some, respectively) immediate next
+states satisfy the property $\Phi$.\\
+
+The following useful equivalence relations 
 exists which can be used to relate existential to universal CTL formulae.
 
 \begin{align*}
@@ -170,10 +183,6 @@ exists which can be used to relate existential to universal CTL formulae.
     \exists\lozenge\Phi &\equiv \neg \forall\square(\neg \Phi) \\
     \exists\square\Phi  &\equiv \neg \forall\lozenge(\neg \Phi) \\
 \end{align*}
-
-\subsection{Recurrence and Guarantee Properties}
-TODO
-
 
 \section{Ranking Functions}\label{sec:ranking_functions}
 
@@ -196,10 +205,9 @@ By definition of the \textit{termination semantics}, a program will terminate if
 the ranking function. In other words, if the termination semantics assigns an upper bound on the number of steps until termination
 starting from the initial state.\\
 
-
 Based on the work of Cousot and Cousot~\cite{CousotCousot-POPL12}. Urban and Miné~\cite{UrbanM-VMCAI15} extended the 
-\textit{termination semantics} to the more general notion of guarantee properties. A guarantee property states that
-some state satisfying a given property is guaranteed to be reached eventually. Termination is therefore just a 
+\textit{termination semantics} to liveness properties in general. More preciesly to guarantee and recurrence properties. 
+A guarantee property states that some state satisfying a given property is guaranteed to be reached eventually. Termination is therefore just a 
 guarantee property stating that some final state will be reached eventually. As with termination, 
 the \textit{guarantee semantics} is a ranking function that assigns each state an upper bound on the number of steps
 until a state satisfying said property is reached. Guarantee properties can be expressed using the CTL formula $\forall\lozenge(a)$
@@ -227,13 +235,13 @@ Recurrence properties can be expressed using the CTL formula $\forall\square\for
 \end{definition}
 
 Figure~\ref{fig:ranking_functios_example} shows an example for the semantics discussed in this section.
-We illustrate the ranking functions by labeling the states in the transition systems with the corresponding value assigned to them by the ranking functions. 
+We illustrate ranking functions by labeling the states with the corresponding value assigned to them by the function. 
 The first example (a) shows the \textit{termination semantics} for a state transition system that always terminates. Therefore the initial state
 has the value $2$ assigned to it stating that this program terminates in at most two steps.\\
 
 The second example (b) shows the \textit{guarantee semantics} for the guarantee property that states that a gray state will be reached eventually 
 ($\forall\lozenge(\text{gray})$).
-This holds for example (b) therefore the initial state has the value $2$ assigned to it. The program reaches a gray state in at most two steps.\\
+This holds for example (b), therefore the initial state has the value $2$ assigned to it. The program reaches a gray state in at most two steps.\\
 
 The last example (c) shows the \textit{recurrence semantics} for the recurrence property that states that a gray state will be reached infinitely often
 ($\forall\square\forall\lozenge(\text{gray})$).
@@ -926,19 +934,10 @@ The syntax definitions are based on chapter 3 of~\cite{UrbanPhd}.
 
 The semantics for expressions are defined as expected. 
 Please refer to~\cite{UrbanPhd} for a formal definition. 
-Note that the symbol `?' stands for non-deterministic choice.\\
+Note that the symbol $?$ stands for non-deterministic choice.\\
 
-Programs are modeled as control-flow-graphs (CFG) (see definition~\ref{def:control_flow_graph}). 
-A control-flow-graph $(V, E) \in cfg$ consists of a set of nodes $V$ and edges $E$.
-Every control point of a program is assigned a label $l \in \mathcal{L}$. 
-The nodes in the control-flow-graph correspond to those labels. 
-An edge $(u, s, v) \in edge$ states that one can transition from node
-$u$ to $v$ by executing statement $s$. 
-The \texttt{skip} statement transitions from one node to another without doing anything, 
-the boolean expression $bexp$ limits the set of states
-that are allowed to transition to the next node and the assignment $X := aexp$ assigns the value of the arithmetic expression $aexp$
-to the variable $X$. A program $(\text{cfg}, l_{entry}, l_{exit}) \in prog$ consists of a control-flow-graph and two special 
-nodes that defined the entry and exit point of the program.
+Programs are defined in terms as control-flow-graphs. The control-flow-graph models all possible program executions as
+paths in the graph.
 
 \begin{definition}\label{def:control_flow_graph}
     Program representation as control-flow-graph. 
@@ -955,8 +954,19 @@ nodes that defined the entry and exit point of the program.
     \end{align*}
 \end{definition}
 
+A control-flow-graph $(V, E) \in cfg$ consists of a set of nodes $V$ and edges $E$.
+Every control point of a program is assigned a label $l \in \mathcal{L}$. 
+The nodes in the control-flow-graph correspond to those labels. 
+An edge $(u, s, v) \in E$ states that one can transition from node
+$u$ to $v$ by executing statement $s$. 
+The \texttt{skip} statement transitions from one node to another without doing anything, 
+the boolean expression $bexp$ limits the set of states
+that are allowed to transition to the next node and the assignment $X := aexp$ assigns the value of the arithmetic expression $aexp$
+to the variable $X$. A program $((V, E), l_{entry}, l_{exit}) \in prog$ consists of a control-flow-graph and two special 
+nodes that defined the entry and exit point of the program.
+
 We introduce the following auxiliary functions on nodes of a control-flow-graph to 
-refere to the incoming and outgoing edges of a node.
+refer to the incoming and outgoing edges of a node.
 
 \begin{definition}\label{def:cfg_in}
     Given a control-flow-graph $(V, E) \in cfg$ and some node $l \in V$
@@ -970,18 +980,18 @@ refere to the incoming and outgoing edges of a node.
 \section{Decision Tree Abstract Domain}\label{sec:decision_tree_abstract_domain}
 
 This section briefly recaps the decision tree abstract domain. 
-Decision trees encode piecewise-defined ranking functions which are used as an abstraction 
-the of general ranking functions (see section~\ref{sec:ranking_functions}). 
-First we give a description of the decision tree abstrac domain. 
+Decision trees encode piecewise-defined linear functions which are used as an abstraction 
+the of degraded ranking functions introduced in Section~\ref{sec:ranking_functions}. 
+First we give a description of the decision tree abstract domain. 
 Then we introduce ordering relations between the elements of the domain and relevant operations on the elements of the domain. 
 An in-depth description of the topics covered in this section can be found in~\cite{UrbanPhd}.\\
 
 \subsection{Domain}
 
 The elements of the abstract domain are binary decision trees. The nodes of the trees are linear constrains and the leafs are linear functions.
-Decision trees partition a state space, given by a set of variables $\mathcal{X}$, into linear partitions. 
+Decision trees partition the state space, given by a set of variables $\mathcal{X}$, into linear partitions. 
 Each partition is defined through the conjunction of linear constraints on the path from root to leaf in the decision tree.
-The linear function at the leaf determines the value of the ranking function for the corresponding partition of the state space.\\
+The linear function at the leaf determines the value of the function for the corresponding partition of the state space.\\
 
 \begin{figure}
     \centering
@@ -1009,8 +1019,8 @@ It consists of two nodes with linear constraints $x \leq 0$ and $y \leq 0$. The 
 It is defined for all states satisfying $x \leq 0 \land y \leq 0$ according to the constraints from root to leaf. 
 The right most leaf is the function $\lambda x.\ 2x$, it is defined for all states satisfying $\neg (x \leq 0)$ 
 (following the right child of a node negates the linear constraint). The leaf in the middle is a bottom node, 
-signifying that the function for the corresponding partition is undefined. Combining all constraints and functions of
-the decision tree in figure~\ref{fig:decision_tree_example} yields the following partial function:
+signifying that the function for the corresponding partition is undefined. 
+In summary the decision tree in figure~\ref{fig:decision_tree_example} is equivalent to the following partial function:
 
 \[
     f(x, y) = \begin{cases}
@@ -1020,7 +1030,7 @@ the decision tree in figure~\ref{fig:decision_tree_example} yields the following
         \end{cases}
 \]
 
-Now we formalize the domain using mathematical notations.
+We will now formalize the decision tree abstract domain.
 
 \subsubsection*{Constraints}
 
@@ -1042,50 +1052,50 @@ The constrains at the inner nodes of the decision tree are elements of the
     \}
 \]
 
-Elements of $\mathcal{C}$ can be instances of the \textit{interval abstract domain}, 
-the \textit{octagon abstract domain} or the \textit{polyhedra abstract domain} (TODO cite).\\
-
+Elements of $\mathcal{C}$ can be instances of the \textit{interval abstract domain}~\cite{CousotCousot76-1}, 
+the \textit{octagon abstract domain}~\cite{Mine:2006:OAD:1145489.1145526} or the \textit{polyhedra abstract domain}~\cite{Cousot:1978:ADL:512760.512770}.
 
 \subsubsection*{Functions}
 
 Leafs of the decision trees are elements of the \textit{functions auxiliary abstract domain} $\mathcal{F}$.
-Elements of $\mathcal{F}$ are either natural valued functions or one of the two special elements $\top_{\mathcal{F}}$ or $\bot_{\mathcal{F}}$.
-The element $\bot_{\mathcal{F}}$ indicates that the value of the ranking functions is undefined for the given partition. 
-The element $\top_{\mathcal{F}}$ indicates that the value of the ranking functions is unknown for the given partition.
+Elements of $\mathcal{F}$ are either natural valued linear functions or one of the two special elements $\top_{\mathcal{F}}$ or $\bot_{\mathcal{F}}$.
+The element $\bot_{\mathcal{F}}$ indicates that the value of the function is undefined for the given partition. 
+The element $\top_{\mathcal{F}}$ indicates that the value of the function is unknown for the given partition.
 \[
     \mathcal{F} \eqdef \{ \mathbb{Z}^{|\mathcal{X}|} \rightarrow \mathbb{N} \} \cup \{ \top_{\mathcal{F}}, \ \bot_{\mathcal{F}} \}
 \]
-Functions that return a constant value $n \in \mathbb{N}$ are written by just stating the constant value e.g. $0 \in \mathcal{F}$ 
+We will write constant functions that return a value $n \in \mathbb{N}$ by just stating the constant value e.g. $0 \in \mathcal{F}$ 
 denotes the constant function that returns $0$ for every state.\\
 
 In the following sections we will distinguish between so called \textit{defined} and \textit{undefined} leafs. 
 A leaf $f \in \mathcal{F}$ is called \textit{defined} if $f$ is neither $\top_{\mathcal{F}}$ nor $\bot_{\mathcal{F}}$  and \textit{undefined} otherwise.
-Defined leafs assign an actual value to its partition, therefore the ranking function that the decision tree represents is defined for that partition.
+Defined leafs assign an actual value to its partition, therefore the function that the decision tree represents is defined for that partition. Otherwise 
+the function is undefined.
 
 
 \subsubsection*{Decision Trees}
 
 We now define the decision tree abstract domain $\mathcal{T}$.
-An element $t \in \mathcal{T}$ is either a \textit{leaf node} $LEAF \colon f$ consisting of a function $f \in \mathcal{F}$ (denoted $t.f$),
-or a \textit{decision node} $NODE\{c\}: l; r$ consists of a linear constraint $c \in \mathcal{C}$ (denoted $t.c$) 
+An element $t \in \mathcal{T}$ is either a \textit{leaf node} $\mathtt{LEAF} \colon f$ consisting of a function $f \in \mathcal{F}$ (denoted $t.f$),
+or a \textit{decision node} $\mathtt{NODE}\{c\}: l; r$ consists of a linear constraint $c \in \mathcal{C}$ (denoted $t.c$) 
 and a left and a right sub tree $l, r \in \mathcal{T}$ 
 (denoted $t.l$ and $t.r$).
 \[
-    \mathcal{T} \eqdef \{LEAF \colon f \ | \ f \in \mathcal{F}\} \cup \{NODE\{c\}: l; r \ | \ c \in \mathcal{C}, l, r \in \mathcal{T} \} 
+    \mathcal{T} \eqdef \{\mathtt{LEAF} \colon f \ | \ f \in \mathcal{F}\} \cup \{\mathtt{NODE}\{c\}: l; r \ | \ c \in \mathcal{C}, l, r \in \mathcal{T} \} 
 \]
 
 For algorithmic purposes we also define $\mathcal{T}_{\mathtt{NIL}}$. 
 This adds an additional leaf element \texttt{NIL} to $\mathcal{T}$ to represent the absence of information about a partition.
-\texttt{NIL} leafs usually appear if some partitions in a decision tree can be excluded because they are infeasible w.r.t the program execution.
+\texttt{NIL} leafs usually appear if a partition in a decision tree can be excluded because it is infeasible w.r.t.\ the program execution.
 \[
-    \mathcal{T}_{\mathtt{NIL}} \eqdef \{\mathtt{NIL}\} \ \cup \ \{LEAF \colon f \ | 
-    \ f \in \mathcal{F}\} \ \cup \ \{NODE\{c\}: l; r \ | \ c \in \mathcal{C}, l, r \in \mathcal{T}_{\mathtt{NIL}}  \} 
+    \mathcal{T}_{\mathtt{NIL}} \eqdef \{\mathtt{NIL}\} \ \cup \ \{\mathtt{LEAF} \colon f \ | 
+    \ f \in \mathcal{F}\} \ \cup \ \{\mathtt{NODE}\{c\}: l; r \ | \ c \in \mathcal{C}, l, r \in \mathcal{T}_{\mathtt{NIL}}  \} 
 \]
 
 
 \subsubsection*{Orders \& Abstractions}
 
-Decision trees are used as an abstraction of ranking functions. It is important to be able to reason about the soundness of this abstraction.
+Decision trees are used as an abstraction of degraded ranking functions. It is important to be able to reason about the soundness of this abstraction.
 For that purpose we will now introduce a number of partial orders which are then used to express soundness.\\
 
 For the elements of $\mathcal{F}$ we defined the \textit{computational order} $\sqsubseteq_{\mathcal{F}}$ 
@@ -1093,12 +1103,13 @@ and \textit{approximation order} $\preceq_{\mathcal{F}}$.
 
 \begin{definition}\label{def:fun_comp_approx_order}
     The \textit{computation order} $\sqsubseteq_{\mathcal{F}}$ and \textit{approximation order} $\preceq_{\mathcal{F}}$
-    for elements of $\mathcal{F}$ is defined as follows for defined leafs.
+    for elements  $f_1, f_2 \in \mathcal{F} \setminus \{\top_{\mathcal{F}}, \ \bot_{\mathcal{F}} \} $ is defined as follows.
     \begin{align*}
         f_1 \sqsubseteq_{\mathcal{F}} f_2  \iff  f_1 \preceq_{\mathcal{F}} f_2 \iff
         \forall x \in \mathbb{Z}^{|\mathcal{X}|} \colon f_1(x) \leq f_2(x)
     \end{align*}
-    Undefined leafs are ordered according to the Hasse diagrams in figure~\ref{fig:function_comp_approx_hasse}. 
+    The special elements $\top_{\mathcal{F}}$ and $\bot_{\mathcal{F}}$ of $\mathcal{F}$ are ordered according to the Hasse 
+    diagrams in figure~\ref{fig:function_comp_approx_hasse}. 
 \end{definition}
 
 
@@ -1132,19 +1143,14 @@ Now we lift these orders to decision trees. The \textit{computational order} $\s
 and \textit{approximation order} $\preceq_{\mathcal{T}}$ are defined by leaf-wise comparison of two decision trees with the corresponding orders 
 $\sqsubseteq_{\mathcal{F}}$ and $\preceq_{\mathcal{F}}$. A more detailed description can be found in~\cite{UrbanPhd}. 
 Intuitively, the \textit{computational order} $\sqsubseteq_{\mathcal{T}}$ is an approximation of the \textit{computational order} $\sqsubseteq$ defined 
-in section~\ref{sec:ctl_semantics} (definition~\ref{def:computational_order}).\\
-
-The \textit{approximation order} $\preceq_{\mathcal{T}}$ is used to define sound abstractions.
+in section~\ref{sec:ctl_semantics} (definition~\ref{def:computational_order}).
+The \textit{approximation order} $\preceq_{\mathcal{T}}$ is used to define sound abstractions.\\
 
 \begin{definition}\label{def:sound_abstraction}
-    Let $\alpha \in (\Sigma \rightarrow \mathbb{N}) \rightarrow \mathcal{T}$ denote the abstraction function from ranking functions to decision trees.
-    A decision tree $t \in \mathcal{T}$ is a sound abstraction of a ranking function $f \in \Sigma \rightarrow \mathbb{N}$ if
-    $\alpha(f) \preceq_{\mathcal{T}} t$.
+    Let $\alpha \in (\Sigma \rightarrow \mathbb{N}) \rightarrow \mathcal{T}$ be the abstraction function from degraded ranking functions to decision trees.
+    A decision tree $t \in \mathcal{T}$ is a sound abstraction of a ranking function $f \in \Sigma \rightarrow \mathbb{N}$ if:
+    \[\alpha(f) \preceq_{\mathcal{T}} t \]
 \end{definition}
-
-This definition allows us to use $\top_\mathcal{F}$ leafs in decision trees to represent uncertainty about some values of a ranking function.
-Due to definition~\ref{def:sound_abstraction} we can use such a decision tree to soundly abstract a more precise ranking function.
-
 
 \subsection{Join}\label{sec:tree_join}
 Two trees can be joined to form the union of all partitions represented by the two trees. When joining two trees, they are first reshaped such
@@ -1152,11 +1158,13 @@ that both trees consist of the same partitions. They only differ in the valus of
 There are two join variations. 
 The \textit{computational join} $\sqcup_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$
 and the \textit{approximation join} $\curlyvee_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$. 
-The first one joins leafs (by forming the least upper bound) with $\sqsubseteq_{\mathcal{F}}$ the latter with $\preceq_{\mathcal{F}}$. 
+Two leafs $l_1$ and $l_2$ are joined by taking the least upper bound of the two functions $l_1.f$ and $l_2.f$ 
+w.r.t. $\sqsubseteq_{\mathcal{F}}$ ($\preceq_{\mathcal{F}}$, respectively).
 Figure~\ref{fig:decision_tree_join_example} demonstrates the difference between the two join types. 
 When joining two trees where one leaf is defined and one is undefined 
 (see left leaf in $t_1$ and $t_2$), the \textit{computational join} will preserve the defined leaf
-and the \textit{approximation join} will make the leaf undefined. For detailed description of the two join types see~\cite{UrbanPhd}.
+and the \textit{approximation join} will make the leaf undefined. If one of the two leafs is $\mathtt{NIL}$ then they are joined by taking the one
+that is not $\mathtt{NIL}$. When both are $\mathtt{NIL}$ then the result of joining the leafs is $\mathtt{NIL}$.
 
 \begin{figure}
     \begin{subfigure}[b]{0.5\textwidth}
@@ -1227,11 +1235,24 @@ and the \textit{approximation join} will make the leaf undefined. For detailed d
     \label{fig:decision_tree_join_example}
 \end{figure}
 
+\subsection{Widening and Dual Widening}\label{sec:tree_widen}
+The \textit{widening} operator $\triangledown_\mathcal{T} \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$
+is used to enforce convergence when computing increasing sequences of values in the decision tree abstract domain. 
+Once the sequence is stable for the \textit{computational order} $\sqsubseteq_\mathcal{T}$, 
+the limit of this sequence is guaranteed to be a sound approximation of the corresponding concrete degraded ranking function 
+w.r.t.\ the \textit{approximation order} $\preceq_{\mathcal{F}}$.
+The dual of this concept for decreasing sequences is called \textit{dual widening} 
+$\bar\triangledown_\mathcal{T} \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$.
+Intuitively, the widening operator tries to extrapolate the function values of decision trees to linear functions. This extrapolation is
+initially a guess. If the guess proves to be wrong, it is corrected by setting the corresponding partition to $\top_\mathcal{T}$ in future iterations.
+A thorough discussion about widening for elements of the decision tree abstract domain can be found in Section 5.2.4 of~\cite{UrbanPhd}.
+
+
 \subsection{Meet}\label{sec:tree_meet}
 The meet operator intersects the partitions of two decision trees. As with the join, both trees are first
 brought into the same shape such that they can be combined leaf-wise. There are two meet variations. 
-The \textit{computational meet} $\mathtt{MEET}_\sqsubseteq \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$
-and the \textit{approximation meet} $\mathtt{MEET}_\preceq \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$. 
+The \textit{computational meet} $\sqcap_\mathcal{T} \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$
+and the \textit{approximation meet} $\curlywedge_\mathcal{T} \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$. 
 Both combine defined leafs using the least upper bound w.r.t.\ $\preceq_{\mathcal{F}}$. 
 If at least one of the two leafs is \texttt{NIL}, then the result is $\bot_\mathcal{F}$ in case of the 
 \textit{computational meet} and \texttt{NIL} in case of the \textit{approximation meet}.
@@ -1239,27 +1260,20 @@ If at least one of the two leafs is \texttt{NIL}, then the result is $\bot_\math
 
 \subsection{Filter}\label{sec:tree_filter}
 The filter operator $\mathtt{FILTER}\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$
-prunes all partitions of a decision tree that do not satisfy a given boolean expression. Leafs are pruned by replacing them with \texttt{NIL}.
+prunes all partitions of a decision tree that do not satisfy the given boolean expression $bexp$. Leafs are pruned by replacing them with \texttt{NIL}.
 The regular version of \texttt{FILTER} prunes the partitions using over-approximation. 
-That means that the resulting tree can still contain states that do not satisfy the boolean expression. It is however guaranteed that all states 
-that satisfy the boolean expression remain in the tree. In addition to the over-approximating version there is also the under-approximating version
+That means that the resulting tree can still be defined for states that do not satisfy the boolean expression. It is however guaranteed that all states 
+that satisfy the boolean expression remain defined in the tree. In addition to the over-approximating version there is also the under-approximating version
 $\mathtt{FILTER\_UNDER}\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$. Here the resulting decision
 tree is guaranteed to not contain any partitions that do not satisfy the boolean expressions. States that do satisfy it might be removed however if
 the underlying numerical domain is not expressive enough.
 
 \subsection{Backward Assign}\label{sec:tree_bwd_assign}
-The operator $\mathtt{B\_ASSIGN}\llbracket X \colon = \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$ handles
+The operator $\mathtt{B\_ASSIGN}\llbracket X := \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$ handles
 the backward assignment of the arithmetic expression \texttt{aexp} to variable $X$. The linear constraints of the decision tree nodes and the 
 functions at the leafs are adjusted accordingly. $\mathtt{B\_ASSIGN}$ uses over-approximation on the underlying numerical domains. 
 As with the $\mathtt{FILTER}$ operator, there also exists an under-approximating version 
-$\mathtt{B\_ASSIGN\_UNDER}\llbracket X \colon = \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$.
-
-\subsection{Step}\label{sec:tree_step}
-TODO
-
-
-
-
+$\mathtt{B\_ASSIGN\_UNDER}\llbracket X := \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$.
 
 \pagebreak
 
@@ -1272,7 +1286,7 @@ to approximate degraded ranking functions in terms of piecewise defined ranking 
 
 \begin{theorem}\label{thr:abstract_ctl_semantics}
     The abstract CTL semantics $\tau^{\sharp}_\Phi \in \mathcal{L} \rightarrow \mathcal{T}$ is a sound approximation of the
-    CTL semantics $\tau_\Phi$ with regards to the \textit{approximation order} $\preceq$.
+    CTL semantics $\tau_\Phi$ with regards to the \textit{approximation order} $\preceq_\mathcal{T}$ (see Definition~\ref{def:sound_abstraction}).
 \end{theorem}
 
 Recall that the CTL semantics $\tau_\Phi \in \Sigma \rightarrow \mathbb{N}$ is a partial function that 
@@ -1310,8 +1324,9 @@ has a small error that can lead to unsoundness. This is discussed in the excursi
 
 \begin{lemma}
     The abstract CTL semantics $\tau^{\sharp}_{a}$ is a sound approximation of the
-    CTL semantics $\tau_{a}$ with regards to the \textit{approximation order} $\preceq$.
+    CTL semantics $\tau_{a}$ with regards to the \textit{approximation order} $\preceq_\mathcal{T}$ (see Definition~\ref{def:sound_abstraction}).
 \end{lemma}
+
 
 \begin{tcolorbox}
     \subsubsection*{\text{RESET} and over-approximation}
@@ -1372,7 +1387,8 @@ The $\mathtt{COMPLEMENT}$ operator is implemented in Algorithm~\ref{alg:tree_com
 \begin{lemma}
     The abstract CTL semantics $\tau^{\sharp}_{\Phi_1 \land \Phi_2}$, $\tau^{\sharp}_{\Phi_1 \lor \Phi_2}$ and $\tau^{\sharp}_{\neg \Phi}$ 
     are a sound approximation of the CTL semantics
-    $\tau_{\Phi_1 \land \Phi_2}$, $\tau_{\Phi_1 \lor \Phi_2}$ and $\tau_{\neg \Phi}$ with regards to the \textit{approximation order} $\preceq$.
+    $\tau_{\Phi_1 \land \Phi_2}$, $\tau_{\Phi_1 \lor \Phi_2}$ and $\tau_{\neg \Phi}$ with regards to the 
+    \textit{approximation order} $\preceq_\mathcal{T}$ (see Definition~\ref{def:sound_abstraction}).
 \end{lemma}
 
 
@@ -1433,7 +1449,7 @@ that holds before executing the statement, i.e.\, the value of the function at t
     \end{align*}
 \end{definition}
 
-The \texttt{skip} statement is handled by the STEP operator (see Section~\ref{sec:tree_step}). This operator increases the value of all defined
+The \texttt{skip} statement is handled by the STEP operator. This operator increases the value of all defined
 partitions in the decision tree by one. Recall that a defined partition in a decision tree represents a set of states that satisfies 
 some CTL property. The associated value is an upper bound on the number of steps until some condition is reached. 
 By executing \texttt{skip} this number is incremented by one.
@@ -1500,15 +1516,35 @@ All partitions that satisfy $\Phi_1$ are set to zero and all partitions that nei
 satisfy $\Phi_1$ nor $\Phi_2$ are discarded (see Algorithm~\ref{alg:tree_until}).
 That way we end up with a decision tree that is only defined for the partitions that satisfy $\forall(\Phi_1 U \Phi_2)$.\\
 
-
 The abstract transformer for the existential case follows the same structure as in the universal case. 
 However instead of using the \textit{approximation join} it uses the \textit{computational join} $\sqcup_\mathcal{T}$ 
 to approximate the semantics of the $\exists$ path quantifier. 
 The \textit{computational join} preserves all partitions that are defined for at least one decision tree. 
 Note however, that all decision trees passed to the \textit{computation join} must be sound since we can no longer 
 rely on the join operator to discard unfeasible partitions. Therefore we apply the under-approximating ${\llbracket stmt \rrbracket}_{u}$ 
-function when processing statements to guarantee soundness.
+function when processing statements to guarantee soundness.\\
 
+\begin{lemma}
+    The abstract CTL semantics 
+    $\tau^{\sharp}_{\forall(\Phi_1 U \Phi_2)}$ and $\tau^{\sharp}_{\exists(\Phi_1 U \Phi_2)}$
+    are a sound approximation of the CTL semantics
+    $\tau_{\forall(\Phi_1 U \Phi_2)}$ and $\tau_{\exists(\Phi_1 U \Phi_2)}$
+    with regards to the \textit{approximation order} $\preceq_\mathcal{T}$ (see Definition~\ref{def:sound_abstraction}).\\
+\end{lemma}
+
+Convergence of the least fixed-point iteration is guaranteed after a finite amount of iterations by using the widening operator $\triangledown_\mathcal{T}$ 
+(see Section~\ref{sec:tree_widen}). The decision tree computed for every node $l \in \mathcal{L}$ is guaranteed to converge by applying the folowing widening scheme 
+($\Phi_U$ is a placeholder for $\forall(\Phi_1 U \Phi_2)$ and $\exists(\Phi_1 U \Phi_2)$):
+
+\begin{align*}
+    y_0 &\eqdef \bot_\mathcal{T}\\
+    y_{n+1} &\eqdef 
+    \begin{cases}
+        y_n                   &\text{if} \ \phi^\sharp_{\Phi_{U}}(y_n) \sqsubseteq_\mathcal{T} y_n 
+        \land \phi^\sharp_{\Phi_U}(y_n) \preceq_\mathcal{T} y_n  \\
+        y_n \ \triangledown_\mathcal{T} \ \phi^\sharp_{\Phi_U}(y_n)     &\text{otherwise}
+    \end{cases}
+\end{align*}
 
 \begin{algorithm}[t]
     \caption{Tree Until Filter}         
@@ -1601,6 +1637,31 @@ That way all states that do not satisfy $\Phi$ indefinitely among all (some, res
 removed from the decision tree until a fixed-point is reached. 
 The \texttt{MASK} operator is defined in Algorithm~\ref{alg:tree_mask}.
 
+
+\begin{lemma}
+    The abstract CTL semantics 
+    $\tau^{\sharp}_{\forall\square\Phi}$ and $\tau^{\sharp}_{\exists\square\Phi}$
+    are a sound approximation of the CTL semantics
+    $\tau_{\forall\square\Phi}$ and $\tau_{\exists\square\Phi}$
+    with regards to the \textit{approximation order} $\preceq_\mathcal{T}$ (see Definition~\ref{def:sound_abstraction}).\\
+\end{lemma}
+
+Convergence of the greatest fixed-point iteration is guaranteed after a finite amount of iterations by using the dual 
+widening operator $\bar\triangledown_\mathcal{T}$  (see Section~\ref{sec:tree_widen}). 
+The decision tree computed for every node $l \in \mathcal{L}$ is guaranteed to converge by applying the folowing widening scheme 
+($\Phi_G$ is a placeholder for $\forall\square\Phi$ and $\exists\square\Phi$):
+
+\begin{align*}
+    y_0 &\eqdef \tau^\sharp_{\Phi_U}(l)\\
+    y_{n+1} &\eqdef 
+    \begin{cases}
+        y_n                   &\text{if} \ y_n \sqsubseteq_\mathcal{T} \phi^\sharp_{\Phi_{G}}(y_n)  
+        \land y_n \preceq_\mathcal{T} \phi^\sharp_{\Phi_G}(y_n)  \\
+        y_n \ \bar\triangledown_\mathcal{T} \ \phi^\sharp_{\Phi_G}(y_n)     &\text{otherwise}
+    \end{cases}
+\end{align*}
+
+
 \begin{algorithm}[t]
     \caption{Tree Mask}         
     \label{alg:tree_mask}       
@@ -1657,7 +1718,13 @@ The resulting value is then passed to the \texttt{ZERO}
 operator which sets all defined partitions to zero (see Algorithm~\ref{alg:tree_zero}).
 
 
-
+\begin{lemma}
+    The abstract CTL semantics 
+    $\tau^{\sharp}_{\forall\bigcirc\Phi}$ and $\tau^{\sharp}_{\exists\bigcirc\Phi}$
+    are a sound approximation of the CTL semantics
+    $\tau_{\forall\bigcirc\Phi}$ and $\tau_{\exists\bigcirc\Phi}$
+    with regards to the \textit{approximation order} $\preceq_\mathcal{T}$ (see Definition~\ref{def:sound_abstraction}).
+\end{lemma}
 
 
 \begin{algorithm}                      
@@ -1678,6 +1745,12 @@ operator which sets all defined partitions to zero (see Algorithm~\ref{alg:tree_
 \end{algorithmic}
 \end{algorithm}
 
+\section{Implementation}
+TODO
+\section{Evaluation}
+TODO
+\section{Conclusion}
+TODO
 
 
 \pagebreak
