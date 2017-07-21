@@ -1240,18 +1240,18 @@ If at least one of the two leafs is \texttt{NIL}, then the result is $\bot_\math
 \subsection{Filter}\label{sec:tree_filter}
 The filter operator $\mathtt{FILTER}\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$
 prunes all partitions of a decision tree that do not satisfy a given boolean expression. Leafs are pruned by replacing them with \texttt{NIL}.
-The regular version of \texttt{FILTER} prunes the partitions using overapproximation. 
+The regular version of \texttt{FILTER} prunes the partitions using over-approximation. 
 That means that the resulting tree can still contain states that do not satisfy the boolean expression. It is however guaranteed that all states 
-that satisfy the boolean expression remain in the tree. In addition to the overapproximating version there is also the underapproximating version
+that satisfy the boolean expression remain in the tree. In addition to the over-approximating version there is also the under-approximating version
 $\mathtt{FILTER\_UNDER}\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$. Here the resulting decision
 tree is guaranteed to not contain any partitions that do not satisfy the boolean expressions. States that do satisfy it might be removed however if
 the underlying numerical domain is not expressive enough.
 
 \subsection{Backward Assign}\label{sec:tree_bwd_assign}
 The operator $\mathtt{B\_ASSIGN}\llbracket X \colon = \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$ handles
-the backward assignment of the arithmetic expression \texttt{aexp} to variable $X$. The linear constraints of the decission tree nodes and the 
-functions at the leafs are adjusted accordingly. $\mathtt{B\_ASSIGN}$ uses overapproximation on the underlying numerical domains. 
-As with the $\mathtt{FILTER}$ operator, there also exists an underapproximating version 
+the backward assignment of the arithmetic expression \texttt{aexp} to variable $X$. The linear constraints of the decision tree nodes and the 
+functions at the leafs are adjusted accordingly. $\mathtt{B\_ASSIGN}$ uses over-approximation on the underlying numerical domains. 
+As with the $\mathtt{FILTER}$ operator, there also exists an under-approximating version 
 $\mathtt{B\_ASSIGN\_UNDER}\llbracket X \colon = \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$.
 
 \subsection{Step}\label{sec:tree_step}
@@ -1450,39 +1450,44 @@ The abstract CTL semantics for universal and existential \textsf{until} properti
     \phi^\sharp_{\exists(\Phi_1 U \Phi_2)} 
     \in (\mathcal{L} \rightarrow \mathcal{T}_{NIL}) \rightarrow (\mathcal{L} \rightarrow \mathcal{T}_{NIL})
 \end{align*}
-starting from the totally undefined decision tree $\bot_\mathcal{T}$.
+starting from the function $\tau_\bot$ that assigns the decision tree $\bot_\mathcal{T}$ to every 
+node in the control-flow-graph. $\forall l \in \mathcal{L} \colon \tau_\bot(l) = \bot_\mathcal{T}$.
 
 \begin{definition}\label{def:abstract_until_semantics}
-    Abstract semantics for `until' operator.
+    Abstract semantics for \textsf{until} operator. 
     \setlength{\jot}{15pt}
     \begin{align*}
-        \tau^\sharp_{\forall(\Phi_1 U \Phi_2)} \ &\eqdef \ \text{lfp}^{\sqsubseteq_{\mathcal{T}}}_{\bot} \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}\\
-        t_{\curlyvee}(l)  \ &\eqdef \ \bigcurlyvee\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{o} ( m(l')) \\
-        \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ \text{UNTIL}\llbracket \tau^\sharp_{\Phi_1}(l), \tau^\sharp_{\Phi_2}(l) \rrbracket (t_{\curlyvee}(l))  \\\\
+        \tau^\sharp_{\forall(\Phi_1 U \Phi_2)} \ &\eqdef \ \text{lfp}^{\sqsubseteq_{\mathcal{T}}}_{\tau_\bot} \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}\\
+        t_{\curlyvee}(m, l)  \ &\eqdef \ \bigcurlyvee\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{o} ( m(l')) \\
+        \phi^\sharp_{\forall(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ \mathtt{UNTIL}\llbracket \tau^\sharp_{\Phi_1}(l), \tau^\sharp_{\Phi_2}(l) \rrbracket (t_{\curlyvee}(m, l))  \\\\
         %
         %
-        \tau^\sharp_{\exists(\Phi_1 U \Phi_2)} \ &\eqdef \ \text{lfp}^{\sqsubseteq_{\mathcal{T}}}_{\bot} \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}\\
-        t_{\sqcup}(l) \ &\eqdef \ \bigsqcup\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{u} (m(l')) \\
-        \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ \mathtt{UNTIL}\llbracket \tau^\sharp_{\Phi_1}(l), \tau^\sharp_{\Phi_2}(l) \rrbracket ( t_{\sqcup}(l))
-    \end{align*}
+        \tau^\sharp_{\exists(\Phi_1 U \Phi_2)} \ &\eqdef \ \text{lfp}^{\sqsubseteq_{\mathcal{T}}}_{\bot_\mathcal{T}} \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}\\
+        t_{\sqcup}(m, l) \ &\eqdef \ \bigsqcup\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{u} (m(l')) \\
+        \phi^\sharp_{\exists(\Phi_1 U \Phi_2)}(m)l \ &\eqdef \ \mathtt{UNTIL}\llbracket \tau^\sharp_{\Phi_1}(l), \tau^\sharp_{\Phi_2}(l) \rrbracket ( t_{\sqcup}(m, l))
+    \end{align*}\\
 \end{definition}
 
 We will first discuss the universal version and then explain what changes for the existential case.
+The value $m \in \mathcal{L} \rightarrow \mathcal{T}_{NIL}$ is the current iteration value of the fixed-point iteration, 
+$\phi^\sharp_{\forall(\Phi_1 U \Phi_2)}(m)$ describes the value of the next iteration.
 Recall that $out(l)$ denotes all outgoing edges of node $l$ leading to its immediate successors nodes. Every edge is labeled with a statement. 
-The abstract transformer $\phi^\sharp_{\forall(\Phi_1 U \Phi_2)}$ computes decision trees for each node $l$ in the 
+The abstract transformer $\phi^\sharp_{\forall(\Phi_1 U \Phi_2)}$ computes decision trees point-wise for each node $l$ in the 
 control-flow-graph, based on the decision trees of its successor nodes.\\
 
-First, the decision tree of each successor node $l'$ is applied to the ${\llbracket stmt \rrbracket}_{o}$ function. 
+First, the decision tree of each successor node $l'$ is passed to the ${\llbracket stmt \rrbracket}_{o}$ function. 
 This approximates the effect of transitioning from $l$ to $l'$. The resulting decision tree approximates the value of 
 the ranking function before executing the statement.\\
 
 If a node has multiple successor nodes then the resulting decision trees 
-are combined using the \textit{approximation join} $\curlyvee$. The \textit{approximation join} discards all partitions (i.e.\ makes them undefined)
+are combined using the \textit{approximation join} $\curlyvee$. 
+The \textit{approximation join} discards all partitions (i.e., makes them undefined)
 of decision trees that are not defined for all successor nodes. By doing so, we approximate the semantic of the universal path  
-quantifier $\forall$.\\ 
+quantifier $\forall$. Note that if a node has no successors then $t_{\curlyvee}(m, l) = \bot_{\mathcal{T}}$ since
+the least upper bound (join) of the empty set is $\bot_\mathcal{T}$.\\
 
-We use the overapproximating version of the ${\llbracket \cdot \rrbracket}_{o}$ function. 
-This might temporarely lead to unsound decision trees due to overapproximation. 
+We use the over-approximating version of the ${\llbracket \cdot \rrbracket}_{o}$ function. 
+This might temporarily lead to unsound decision trees due to over-approximation. 
 Decision trees produced by ${\llbracket \cdot \rrbracket}_{o}$ can contain defined partitions for states that are unfeasible 
 among that path in the control-flow-graph. For the universal case however, this is not a problem since the 
 \textit{approximation join} only keeps those partitions which are feasible among all paths. 
@@ -1490,10 +1495,10 @@ Partitions that are unfeasible among some paths are discarded.\\
 
 Finally the result of joining the decision trees of the immediate predecessors are 
 applied to he $\mathtt{UNTIL}\llbracket \tau^\sharp_{\Phi_1}, \tau^\sharp_{\Phi_2} \rrbracket $ operator. 
-The purpose of his operator is to implement the semantics of the `until' CTL operator. 
+The purpose of his operator is to implement the semantics of the \textsf{until} CTL operator. 
 All partitions that satisfy $\Phi_1$ are set to zero and all partitions that neither 
-satisfy $\Phi_1$ nor $\Phi_2$ are discarded (see algorithm~\ref{alg:tree_until}).
-That way we end up with a decision tree that is only defined for those partitions which satisfy $\forall(\Phi_1 U \Phi_2)$.\\
+satisfy $\Phi_1$ nor $\Phi_2$ are discarded (see Algorithm~\ref{alg:tree_until}).
+That way we end up with a decision tree that is only defined for the partitions that satisfy $\forall(\Phi_1 U \Phi_2)$.\\
 
 
 The abstract transformer for the existential case follows the same structure as in the universal case. 
@@ -1501,69 +1506,11 @@ However instead of using the \textit{approximation join} it uses the \textit{com
 to approximate the semantics of the $\exists$ path quantifier. 
 The \textit{computational join} preserves all partitions that are defined for at least one decision tree. 
 Note however, that all decision trees passed to the \textit{computation join} must be sound since we can no longer 
-rely on the join operator to discard unfeasible partitions. Therefore we apply the underapproximating ${\llbracket stmt \rrbracket}_{u}$ 
-function when processing satements to guarantee soundness.
+rely on the join operator to discard unfeasible partitions. Therefore we apply the under-approximating ${\llbracket stmt \rrbracket}_{u}$ 
+function when processing statements to guarantee soundness.
 
 
-\subsubsection*{Global}
-The abstract CTL semantics for universal and existential `global' properties are defined as the greatest fixed-point of the abstract transformers
-\[
-    \phi^\sharp_{\forall\square\Phi}, \phi^\sharp_{\exists\square\Phi} 
-\in (\mathcal{L} \rightarrow \mathcal{T}_{NIL}) \rightarrow (\mathcal{L} \rightarrow \mathcal{T}_{NIL})
-\]
-starting from the abstract CTL semantics $\tau^\sharp_\Phi$ of the inner CTL property $\Phi$ (see definition~\ref{def:abstract_global_semantics}).
-
-\begin{definition}\label{def:abstract_global_semantics}
-    Abstract semantics for `global' operator.
-    \setlength{\jot}{15pt}
-    \begin{align*}
-        \tau^\sharp_{\forall\square\Phi} \ &\eqdef \ \text{gfp}^{\sqsubseteq_{\mathcal{T}}}_{\tau^\sharp_\Phi} \phi^\sharp_{\forall\square\Phi}\\
-        t_{\curlyvee}(l)  \ &\eqdef \ \bigcurlyvee\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{o} ( m(l')) \\
-        \phi^\sharp_{\forall\square\Phi}(m)l \ &\eqdef \ \mathtt{MASK}\llbracket t_{\curlyvee}(l)\rrbracket (m(l))  \\\\
-        %
-        \tau^\sharp_{\exists\square\Phi} \ &\eqdef \ \text{gfp}^{\sqsubseteq_{\mathcal{T}}}_{\tau^\sharp_\Phi} \phi^\sharp_{\exists\square\Phi}\\
-        t_{\sqcup}(l)  \ &\eqdef \ \bigsqcup\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{u} ( m(l')) \\
-        \phi^\sharp_{\exists\square\Phi}(m)l \ &\eqdef \ \mathtt{MASK}\llbracket t_{\sqcup}(l) \rrbracket (m(l))  \\\\
-    \end{align*}
-\end{definition}
-
-The abstract transformer for the `global' operator uses the same approach as the `until' operator to join outgoing edges w.r.t $\forall$ and $\exists$.
-In the final step however, the current decision tree $m(l)$ is masked with the updated decision tree $t_{\curlyvee}(l)$ and $t_{\sqcup}(l)$.
-Masking means the all defined partitions in $m(l)$ that are not also defined in $t_{\curlyvee}(l)$ (or $t_{\sqcup}(l)$) are discarded. 
-Note that the decision tree $\tau^\sharp_\Phi(l_{exit})$ is the totally undefind decision tree $\bot_\mathcal{T}$.
-That way all states that do not satisfy $\Phi$ indefinitely among all (or some) paths are iteratively 
-removed from the decision tree until a fixed-point is reached. 
-The \texttt{MASK} operator is defined in algorithm~\ref{alg:tree_mask}.
-
-
-
-
-\subsubsection*{Next}
-The abstract CTL semantics for the `next' operator are given in definition~\ref{def:abstract_next_semantics}. 
-
-\begin{definition}\label{def:abstract_next_semantics}
-    Abstract semantics for `next' operator.
-    \setlength{\jot}{15pt}
-    \begin{align*}
-        t_{\curlyvee}(l) \ &\eqdef \  
-        \bigcurlyvee\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{o}(\tau^\sharp_\Phi(l)) \\
-        \tau^\sharp_{\forall\bigcirc\Phi} \ &\eqdef \ \lambda l. \ \mathtt{ZERO}(t_{\curlyvee}(l))\\\\
-        %
-        t_{\sqcup}(l) \ &\eqdef \  
-        \bigsqcup\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{u}(\tau^\sharp_\Phi(l)) \\
-        \tau^\sharp_{\exists\bigcirc\Phi} \ &\eqdef \ \lambda l. \ \mathtt{ZERO}(t_{\sqcup}(l))\\
-    \end{align*}
-\end{definition}
-
-As opposed to the `until' and `global' operator, the decision trees for each label only depends on the immediate successor nodes.
-Therefore no fixed-point iteration is necessary. Each node is computed in one step based on the immediate successor nodes.
-Outgoing edges are joined as describe for the `until' and `global' operators. The resulting value is then applied to the \texttt{ZERO}
-operator which sets all defined partitions to zero (see algorithm~\ref{alg:tree_zero}).
-
-
-
-
-\begin{algorithm}                      
+\begin{algorithm}[t]
     \caption{Tree Until Filter}         
     \label{alg:tree_until_filter}       
     \begin{algorithmic}
@@ -1586,7 +1533,7 @@ operator which sets all defined partitions to zero (see algorithm~\ref{alg:tree_
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}                      
+\begin{algorithm}[t]                    
     \caption{Tree Until}         
     \label{alg:tree_until}       
     \begin{algorithmic}
@@ -1616,7 +1563,45 @@ operator which sets all defined partitions to zero (see algorithm~\ref{alg:tree_
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}                      
+
+
+
+\subsubsection*{Global}
+The abstract CTL semantics for universal and existential \textsf{global} properties are defined as the greatest fixed-point of the abstract transformers
+
+\begin{align*}
+    \phi^\sharp_{\forall\square\Phi} \in (\mathcal{L} \rightarrow \mathcal{T}_{NIL}) \rightarrow (\mathcal{L} \rightarrow \mathcal{T}_{NIL})\\
+    \phi^\sharp_{\exists\square\Phi} \in (\mathcal{L} \rightarrow \mathcal{T}_{NIL}) \rightarrow (\mathcal{L} \rightarrow \mathcal{T}_{NIL})
+\end{align*}
+starting from the abstract CTL semantics $\tau^\sharp_\Phi$ of the inner CTL property $\Phi$.
+
+\begin{definition}\label{def:abstract_global_semantics}
+    Abstract semantics for \textsf{global} operator.
+    \setlength{\jot}{15pt}
+    \begin{align*}
+        \tau^\sharp_{\forall\square\Phi} \ &\eqdef \ \text{gfp}^{\sqsubseteq_{\mathcal{T}}}_{\tau^\sharp_\Phi} \phi^\sharp_{\forall\square\Phi}\\
+        t_{\curlyvee}(m, l)  \ &\eqdef \ \bigcurlyvee\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{o} ( m(l')) \\
+        \phi^\sharp_{\forall\square\Phi}(m)l \ &\eqdef \ \mathtt{MASK}\llbracket t_{\curlyvee}(l,m)\rrbracket (m(l))  \\\\
+        %
+        \tau^\sharp_{\exists\square\Phi} \ &\eqdef \ \text{gfp}^{\sqsubseteq_{\mathcal{T}}}_{\tau^\sharp_\Phi} \phi^\sharp_{\exists\square\Phi}\\
+        t_{\sqcup}(m, l)  \ &\eqdef \ \bigsqcup\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{u} ( m(l')) \\
+        \phi^\sharp_{\exists\square\Phi}(m)l \ &\eqdef \ \mathtt{MASK}\llbracket t_{\sqcup}(l,m) \rrbracket (m(l))  \\\\
+    \end{align*}
+\end{definition}
+
+The value $m \in \mathcal{L} \rightarrow \mathcal{T}_{NIL}$ is the current iteration value of the fixed-point iteration. 
+The definition for $\phi^\sharp_{\forall\square\Phi}(m)$ ($\phi^\sharp_{\exists\square\Phi}(m)$, respectively) describes the value of the next iteration.
+We use the same approach as the \textsf{until} operator to join decision trees of successor nodes
+(see $t_{\curlyvee}(m, l)$ and $t_{\sqcup}(m, l)$).\\
+
+In the final step however, the decision tree $m(l)$ of each node $l$ is \textit{masked} with the result of $t_{\curlyvee}(l,m)$ ($t_{\sqcup}(l,m)$ respectively).
+Masking is implemented by the \texttt{MASK} operator. This operator sets all partitions of $m(l)$ to $\bot_\mathcal{T}$,
+that are not defined in $t_{\curlyvee}(l,m)$ ($t_{\sqcup}(l,m)$, respectively).
+That way all states that do not satisfy $\Phi$ indefinitely among all (some, respectively) paths are iteratively 
+removed from the decision tree until a fixed-point is reached. 
+The \texttt{MASK} operator is defined in Algorithm~\ref{alg:tree_mask}.
+
+\begin{algorithm}[t]
     \caption{Tree Mask}         
     \label{alg:tree_mask}       
     \begin{algorithmic}
@@ -1645,6 +1630,35 @@ operator which sets all defined partitions to zero (see algorithm~\ref{alg:tree_
         \EndFunction
 \end{algorithmic}
 \end{algorithm}
+
+
+
+\subsubsection*{Next}
+The abstract CTL semantics for the \textsf{next} operator are given in Definition~\ref{def:abstract_next_semantics}: 
+
+\begin{definition}\label{def:abstract_next_semantics}
+    Abstract semantics for \textsf{next} operator.
+    \setlength{\jot}{15pt}
+    \begin{align*}
+        t_{\curlyvee}(l) \ &\eqdef \  
+        \bigcurlyvee\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{o}(\tau^\sharp_\Phi(l)) \\
+        \tau^\sharp_{\forall\bigcirc\Phi} \ &\eqdef \ \lambda l. \ \mathtt{ZERO}(t_{\curlyvee}(l))\\\\
+        %
+        t_{\sqcup}(l) \ &\eqdef \  
+        \bigsqcup\limits_{(l, stmt, l') \ \in \ out(l) } {\llbracket stmt \rrbracket}_{u}(\tau^\sharp_\Phi(l)) \\
+        \tau^\sharp_{\exists\bigcirc\Phi} \ &\eqdef \ \lambda l. \ \mathtt{ZERO}(t_{\sqcup}(l))\\
+    \end{align*}
+\end{definition}
+
+As opposed to the \textsf{until} and \textsf{global} operator, the decision trees for each label only depends on the immediate successor nodes.
+Therefore no fixed-point iteration is necessary. Each node is computed in one step based on the immediate successor nodes.
+Outgoing edges are joined as describe for the \textsf{until} and \textsf{global} operators. 
+The resulting value is then passed to the \texttt{ZERO}
+operator which sets all defined partitions to zero (see Algorithm~\ref{alg:tree_zero}).
+
+
+
+
 
 \begin{algorithm}                      
     \caption{Tree Zero}         
