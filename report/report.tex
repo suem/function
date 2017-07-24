@@ -1746,7 +1746,72 @@ operator which sets all defined partitions to zero (see Algorithm~\ref{alg:tree_
 \end{algorithm}
 
 \section{Implementation}
-TODO
+
+This section describes how the CTL analysis was implemented for the 
+FuncTion Static Analyzer\footnote{\url{https://github.com/caterinaurban/function}}. 
+First, we briefly discuss the initial feature set of FuncTion, 
+followed by a description of the various extensions that were added to the analyzer.
+
+\subsection{Previous Work}
+FuncTion is an abstract interpretation based static analyzer that was written by Caterina Urban 
+in the context of her PhD thesis~\cite{UrbanPhd}. 
+When starting this thesis, FuncTion had support  for analyzing termination, guarantee properties and
+recurrence properties (see Section~\ref{sec:ranking_functions}). To that end, it featured an implementation of 
+the decision tree abstract domain (see Section~\ref{sec:decision_tree_abstract_domain}) with the corresponding \textit{join}, \textit{meet}, 
+\textit{widen} (but not \textit{dual-widen}), \textit{filter}, \textit{backward assign} and \textit{reset} operators.
+Note that the \textit{filter}, \text{backward assign} and $\text{reset}$ operators were all implemented using over-approximation. 
+The Apron\footnote{\url{http://apron.cri.ensmp.fr/library}} library was used as basis for the numerical domains. 
+FuncTion can analyze programs using the \textit{interval}, \textit{octagon} and \textit{polyhedra} abstract domain.
+Finally, FuncTion was equipped with a front-end for parsing programs written in a C-like language. 
+The termination analysis could only tail-recursive function calls. 
+The analysis of guarantee and recurrence properties could could not handle any function calls.
+
+\subsection{CTL Analysis}
+
+The CTL analysis was implemented based on the existing components of FuncTion. We reused the implementation of the decision tree abstract domain
+and added implementations for the \textit{complement}, \textit{until} and \textit{mask} operators that we presented in Section~\ref{sec:abstract_ctl_semantics}.
+We also wrote an implementation of the \textit{dual-widen} operator which was defined in~\cite{UrbanPhd} but not actually implemented.\\
+
+The under-approximating implementations of the \textit{filter} and \textit{backward assign} required an under-approximating implementation of said
+operators on the underlying numerical abstract domains. Such an implementation for the polyhedra abstract domain was proposed by 
+Antoine Miné~\cite{DBLP:journals/entcs/Mine12} and implemented by him in the Banal Static Analyzer\footnote{\url{https://www-apr.lip6.fr/~mine/banal/}}.
+We were able to reuse his implementation in FuncTion which allowed us to provide under-approximating 
+version of \textit{filter} and \textit{backward assign} with
+minimal effort. In addition to that, the under-approximating version of \textit{filter} also allowed us to fix the unsoundness problem of the
+\textit{reset} operator which we discussed in Section~\ref{sec:abstract_ctl_semantics}.\\
+
+The inital implementation of the CTL analysis in FuncTion reuses the existing front-end and performs the analysis through a backward analysis 
+on the abstract-syntax-tree. This had the drawback that the analyzer did not support control-flow statements such as \texttt{goto}, \texttt{continue}
+or \texttt{break}. Furthermore there was no support for function calls.
+These problems were later resolved by converting the analysis to a control-flow-graph based implementation. 
+This will be discussed in the next subsection. 
+
+\subsection{Improved Front-end}
+As mentioned previously the abstract-syntax-tree (AST) based CTL analysis had several drawbacks. Performing the analysis on the AST made it
+difficult to support \texttt{goto} statements and function calls. Therefore we changed the analysis to a control-flow-graph based analysis.
+To that end we reused an existing front-end\footnote{\url{https://www-apr.lip6.fr/~mine/enseignement/l3/2015-2016/project.html}}
+for a university course by Antoine Miné which features an abstract-syntax-tree to control-flow-graph conversion.\\
+
+The new analysis implementation is based on a standard worklist algorithm~\cite{DBLP:books/daglib/0098888}. Nodes to be proccessed are 
+added to a worklist and processed in FIFO order. If the value of a node changes, all its predecessors are added to the worklist. 
+To improve performance, nodes are never added twice to the worklist.\\ 
+
+Widening is only performed at loop heads. To that end, we implemented a simple loop-detection algorithm. 
+First we check if the control-flow-graph is reducible. Then we detect loop heads by 
+finding edges in the control-flow-graph where the head dominates its tail. The dominator tree is computed
+with a simple $O(mn)$ algorithm. Better algorithms exists~\cite{Lengauer:1979:FAF:357062.357071}, 
+however at the time of implementing the static analyzer, performance was not an issue.
+More information about loop-detection can be found in the corresponding literature~\cite{DBLP:books/aw/AhoSU87}.\\
+
+Non-recursive function calls are handled by inlining. Recursive calls are resolved by adding edges to the control-flow-graph
+from every call site to the entry node of the function and from the exit node of the function back to the call sites. 
+This approach leads to infeasible paths in the control-flow-graph. However the result of the analysis is still sound.
+We did not pursue more involved intra-procedural analysis approaches since this was not the focus the thesis.\\
+
+Existential CTL properties can be analyzed using the abstract semantics presented in Section~\ref{sec:abstract_ctl_semantics}. In addition to that, 
+it is also possible to convert existential properties to equivalent universal properties (see Section~\ref{sec:computation_tree_logic}). 
+This can yield more precise results in some cases.
+
 \section{Evaluation}
 TODO
 \section{Conclusion}
