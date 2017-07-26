@@ -113,15 +113,23 @@ depicted in figure~\ref{fig:basic_transition_system}. There it holds that $\text
 because $a$ is the predecessor of $b$ and $c$ the predecessor of $d$. 
 However note that $\widetilde{\text{pre}}(\{b, d\}) = \{c\}$ since only $c$ has 
 transitions that exclusively end up in either $b$ or $d$. 
-Consequently it holds that $\widetilde{\text{pre}}(\{b, c\}) = \{a\}$ because $a$ transitions exclusively to either $b$ or $c$.
+Consequently it holds that $\widetilde{\text{pre}}(\{b, c\}) = \{a\}$ because $a$ transitions exclusively to either $b$ or $c$.\\
 
+The next section introduces Computation Tree Logic, 
+a logic for stating properties about transition systems.  
 
 \section{Computation Tree Logic (CTL)}\label{sec:computation_tree_logic}
 
-Computation Tree Logic (CTL) is a logic which allows us to state properties about possible execution traces of state transition systems. 
+Computation Tree Logic (CTL) is a logic which allows stating properties about execution traces of state transition systems. 
 In the context of this thesis, CTL is used to express temporal properties about the runtime behavior of programs. 
-This section gives a brief introduction into the syntax and semantic of CTL. 
-Further information about CTL can be found in~\cite{baier2008principles}.
+This section gives a brief introduction into the syntax and semantic of CTL.  
+Further information about CTL can be found in~\cite{baier2008principles}.\\
+
+We assume the existence of some atomic proposition logic over the set of states. 
+Atomic propositions $a \in \mathtt{AP}$ state properties of states $\sigma \in \Sigma$. 
+The satisfaction relation $\models \ \subseteq \Sigma \times \mathtt{AP}$ determines 
+if a state satisfies an atomic proposition.
+
 
 \subsection{Syntax}
 The syntax of a CTL formula is given by the following grammar.
@@ -136,13 +144,13 @@ The syntax of a CTL formula is given by the following grammar.
     & \forall(\Phi \ U \ \Phi) | \ \exists(\Phi \ U \ \Phi) 
 \end{align*}
 
-The term $a$ is a placeholder for arbitrary atomic propositions. Formulae with quantifiers $\exists$ or $\forall$ are called
-path-dependent, formulae without path-independent.
+The term $a$ is an atomic propositions. Formulae with quantifiers $\exists$ or $\forall$ are called
+path-dependent, formulae without are called path-independent.
 
 \subsection{Semantic}
 
 We now define the satisfaction relation $\models$ between states $\sigma \in \Sigma$ and CTL formulae.
-The satisfaction relation for atomic propositions is assumed to be given by the underlying 
+The satisfaction relation for atomic propositions $a \in \mathtt{AP}$ is assumed to be given by the underlying 
 logic for atomic propositions.
 
 \begin{align*}
@@ -162,15 +170,15 @@ logic for atomic propositions.
 
 The states $\sigma \in \Sigma$ are part of a state transition system $\langle \Sigma, \tau \rangle$ and 
 $Paths(\sigma_0)$ is the set of all paths $\pi = \sigma_0 \sigma_1 \sigma_2 \dots$ starting from $\sigma_0$ with $\pi[j] = \sigma_j$.
-The CTL formulae $\forall\lozenge\Phi$ and $\exists\lozenge\Phi$ are not defined for $\models$ as they are equivalent to 
+The CTL formulae $\forall\lozenge\Phi$ and $\exists\lozenge\Phi$ are not explicitly defined. They are equivalent to 
 $\forall(true \ U \ \Phi)$ and $\exists(true \ U \ \Phi)$. \\
 
-Properties $\forall(\Phi_1 \ U \ \Phi_2)$ and $\exists(\Phi_1 \ U \ \Phi_2)$ are called \textsf{until} properties. They state that 
-all (some, respectively) reachable paths form a chain of states satisfying $\Phi_1$ up until a state is reached that satisfies $\Phi_2$.
-It is also possible to reach a state that satisfies $\Phi_2$ directly without passing states satisfying $\Phi_1$.\\
+Properties $\forall(\Phi_1 \ U \ \Phi_2)$ and $\exists(\Phi_1 \ U \ \Phi_2)$ are called \textsf{until} properties.
+These properties require that a state satisfying $\Phi_2$ is reached eventually among all (some, respectively) paths, 
+and until then $\Phi_1$ holds.\\
 
 Properties $\forall\square\Phi$ and $\exists\square\Phi$ are called \textsf{global} properties. They state that all states among 
-all (some, respectively) reachable paths globally satisfy the property $\Phi$.\\
+all (some, respectively) reachable paths satisfy the property $\Phi$.\\
 
 Properties $\forall\bigcirc\Phi$ and $\exists\bigcirc\Phi$ are called \textsf{next} properties. They state that all (some, respectively) immediate next
 states satisfy the property $\Phi$.\\
@@ -184,37 +192,38 @@ exists which can be used to relate existential to universal CTL formulae.
     \exists\square\Phi  &\equiv \neg \forall\lozenge(\neg \Phi) \\
 \end{align*}
 
+The next section introduces the concept of ranking functions, a proof method for liveness properties. 
+This proof method will then be extended to CTL in Section~\ref{sec:ctl_semantics}. 
+
 \section{Ranking Functions}\label{sec:ranking_functions}
 
-The traditional approach for proving termination is based on inferring \textit{ranking functions}~\cite{Touring49}~\cite{Floyd67}.
-A ranking function is a partial function from program states to a well-ordered set. For simplicity reasons we will use natural numbers as example.
-To prove termination, the values of the ranking functions must decrease during program execution. 
-The value that a \textit{ranking function} assigns to a state is an upper bound on the number of steps until the program terminates.
-Cousot and Cousot prove the existence of a \textit{most precise ranking function} then can be derived 
-by abstract interpretation \cite{CousotCousot-POPL12}. The theory of abstract interpretation makes it possible to express 
-various aspects of the semantics of a program. In that context the \textit{most precise ranking function} for termination is called
-the \textit{termination semantics}.
+The traditional method for proving termination are \textit{ranking functions}~\cite{Touring49}~\cite{Floyd67}.
+A ranking function is a partial function from program states to a well-ordered set like natural numbers or ordinals. 
+To prove termination, the value of the ranking function must decrease during program execution. 
+Cousot and Cousot prove the existence of a \textit{most precise ranking function} and that it can be derived 
+by abstract interpretation \cite{CousotCousot-POPL12}. 
+We will call this \textit{most precise ranking function}, as defined by Cousot and Cousot, 
+the \textit{termination semantics} from now on.
 
 \begin{definition}
     The \textit{termination semantics} is a ranking function 
-    $\tau^{t} \in \Sigma \rightarrow \mathbb{N}$.
-    A program starting from some state $\sigma \in \Sigma$ terminates if and only if $\sigma \in dom(\tau^{t})$.
+    $\tau^{t} \in \Sigma \rightarrow \mathbb{O}$.
+    A program starting from some initial state $\sigma \in \Sigma$ terminates if and only if $\sigma \in dom(\tau^{t})$.
 \end{definition}
 
-By definition of the \textit{termination semantics}, a program will terminate if its initial state is in the domain of
-the ranking function. In other words, if the termination semantics assigns an upper bound on the number of steps until termination
-starting from the initial state.\\
+The \textit{termination semantics} assigns an upper bound on the number of steps until termination to each state. 
+Therefore, a program terminates if its initial state is in the domain of the \textit{termination semantics}.\\
 
-Based on the work of Cousot and Cousot~\cite{CousotCousot-POPL12}. Urban and Miné~\cite{UrbanM-VMCAI15} extended the 
-\textit{termination semantics} to liveness properties in general. More preciesly to guarantee and recurrence properties. 
-A guarantee property states that some state satisfying a given property is guaranteed to be reached eventually. Termination is therefore just a 
-guarantee property stating that some final state will be reached eventually. As with termination, 
-the \textit{guarantee semantics} is a ranking function that assigns each state an upper bound on the number of steps
+Based on the work of Cousot and Cousot~\cite{CousotCousot-POPL12}, Urban and Miné~\cite{UrbanM-VMCAI15} extended the 
+\textit{termination semantics} to other liveness properties. More precisely to guarantee and recurrence properties. 
+A guarantee property states that some state satisfying a given property is guaranteed to be reached eventually. 
+Termination is therefore just a guarantee property stating that some final state will be eventually reached. 
+As with termination, the \textit{guarantee semantics} is a ranking function that assigns each state an upper bound on the number of steps
 until a state satisfying said property is reached. Guarantee properties can be expressed using the CTL formula $\forall\lozenge(a)$
 
 \begin{definition}
     The \textit{guarantee semantics} is a ranking function 
-    $\tau_{[S]}^{g} \in \Sigma \rightarrow \mathbb{N}$
+    $\tau_{[S]}^{g} \in \Sigma \rightarrow \mathbb{O}$
     where $S \subseteq \Sigma$ is a set of states satisfying a desired property.
     A program starting from some state $\sigma \in \Sigma$ will reach a state 
     $s \in S$ if and only if $\sigma \in dom(\tau_{[S]}^{g})$.
@@ -223,7 +232,7 @@ until a state satisfying said property is reached. Guarantee properties can be e
 In addition to guarantee properties, Urban and Miné~\cite{UrbanM-VMCAI15} also introduced the \textit{recurrence semantics}.
 A recurrence property guarantees that a program starting from some state $\sigma \in \Sigma$ will reach some state satisfying
 a given property infinitely often. The value assigned to a state by the \textit{recurrence semantics}
-is an upper bound on the number of executions steps until a state satisfying the property is reached the next time. 
+is an upper bound on the number of executions steps until the next state satisfying the property is reached. 
 Recurrence properties can be expressed using the CTL formula $\forall\square\forall\lozenge(a)$.
 
 \begin{definition}
@@ -246,10 +255,11 @@ This holds for example (b), therefore the initial state has the value $2$ assign
 The last example (c) shows the \textit{recurrence semantics} for the recurrence property that states that a gray state will be reached infinitely often
 ($\forall\square\forall\lozenge(\text{gray})$).
 As one can see in the transition system, this is not true when starting from the initial state. Therefore the \textit{recurrence semantics} is undefined
-for the initial state. However the property would hold when starting from state $c$ or $d$. 
+for the initial state. However the property holds when starting from state $c$ or $d$. 
 Accordingly these two states have the values $1$ and $0$ assigned to them.\\
 
 We refer to~\cite{UrbanPhd} for a detailed discussion of the various semantics presented in this section.
+The next section extends on the concepts of this section and presents a proof method for CTL properties.
 
 \begin{figure}
     \begin{subfigure}[b]{0.32\textwidth}
@@ -307,6 +317,7 @@ We refer to~\cite{UrbanPhd} for a detailed discussion of the various semantics p
     } 
     \label{fig:ranking_functios_example}
 \end{figure}
+
 
 \section{Concrete Semantics for CTL}\label{sec:ctl_semantics}
 
@@ -1813,10 +1824,144 @@ it is also possible to convert existential properties to equivalent universal pr
 This can yield more precise results in some cases.
 
 \section{Evaluation}
-TODO
-\section{Conclusion}
-TODO
 
+This section presents the result of our evaluation of the CTL analysis capabilities of FuncTion. 
+First we present a few examples that demonstrate the kinds of properties FuncTion is able to analyze. 
+Then we present how FuncTion fares against other static analyzers.\\
+
+\begin{figure}[h]
+\centering
+\begin{lstlisting}[language=C, numbers=right, numbersep=1pt]
+while (x > y) {
+    x--;
+}
+\end{lstlisting}
+\caption{Program \textsf{test\_until}}
+\end{figure}
+
+
+Let us consider the program \textsf{test\_until}. If we assume that initially $x \geq y$ holds, one can show that the program satisfies 
+the property $\forall(x \geq y \ U \ x = y)$. FuncTion is able to infer the following 
+degraded ranking function for the entry porint of the program:
+
+\begin{align*}
+f(x, y) = \begin{cases}
+    2(x-y) & \text{if} \ x \geq y \\
+    \text{undefined}    & \text{otherwise}
+\end{cases}
+\end{align*}
+
+It states that the program satisfies the CTL properties if $x \geq y$ holds initially. Furthermore, the goal of the \textit{until}
+property, $x = y$, will be reached in at most $2(x-y)$ program execution steps.
+
+
+
+
+
+
+\begin{table}
+\scriptsize\begin{tabular}{l l l}
+    \textbf{No} & \textbf{Program} & \textbf{Property} \\
+\hline
+1.1 & and\_test.c & $\forall\square\forall\lozenge(n = 1) \land \forall\lozenge(n = 0)$ \\
+1.2 & and\_test.c & $\forall\square\forall\lozenge(n = 1)$ \\
+1.3 & and\_test.c & $\forall\lozenge(n = 0)$ \\
+1.4 & global\_test\_simple. & $\forall\square\forall\lozenge(x \leq -10)$ \\
+1.5 & multi\_branch\_choice.c & $\forall\lozenge(x = 4 \lor x = -4)$ \\
+1.6 & multi\_branch\_choice.c & $\exists\lozenge(x = -4)$ \\
+1.7 & or\_test. & $\forall\lozenge\forall\square(x < -100) \lor \forall\lozenge(x = 20)$  \\
+1.8 & potential\_termination.c & $\exists\lozenge(exit: \mathtt{true})$ \\
+1.9 & until\_test.c & $\forall(x \geq y \ U \ x = y)$ \\
+1.10 & existential\_test\_1 & $\exists\lozenge(r = 1)$ \\
+1.11 & existential\_test\_3 & $\exists\lozenge(r = 1)$ \\
+1.12 & existential\_test\_4 & $\exists\lozenge(r = 1)$ \\
+\hline
+2.1 & acqrel.c & $\forall\square((a = 1) \Rightarrow \forall\lozenge(r = 1))$ \\
+2.2 & acqrel\_mod.c & $\forall\square((a = 1) \Rightarrow \forall\lozenge(r = 1))$ \\
+2.3 & fig8-2007.c & $(set = 1) \Rightarrow \forall\lozenge(unset = 1)$ \\
+2.4 & fig8-2007\_mod.c & $(set = 1) \Rightarrow \forall\lozenge(unset = 1)$ \\
+2.5 & win4.c & $\forall\lozenge\forall\square(WItemsNum \geq 1)$ \\
+2.6 & toylin.c & $(c \leq 5 \land c > 0) \lor \forall\lozenge(resp > 5)$ \\
+\hline
+3.1 & coolant\_basis\_1\_safe\_sfty.c & $\forall\square((chainBroken = 1) \Rightarrow \forall\square(chainBroken = 1))$ \\
+3.2 & coolant\_basis\_1\_unsafe\_sfty.c & $\neg \forall\square((chainBroken = 1) \Rightarrow \forall\square(chainBroken = 1))$ \\
+3.3 & coolant\_basis\_2\_safe\_lifeness.c & $\forall\square\forall\lozenge(otime < time)$ \\
+3.4 & coolant\_basis\_2\_unsafe\_lifeness.c & $\neg \forall\square\forall\lozenge(otime < time)$ \\
+3.5 & coolant\_basis\_3\_safe\_sfty.c & $\forall\square((init = 3) \Rightarrow \forall\square\forall\lozenge(time > otime))$ \\
+3.6 & coolant\_basis\_3\_unsafe\_sfty.c & $\neg \forall\square((init = 3) \Rightarrow \forall\square\forall\lozenge(time > otime))$ \\
+3.7 & coolant\_basis\_4\_safe\_sfty.c & $\forall\square(init \neq 3 \lor tem \leq limit \lor \forall\lozenge\forall\square(chainBroken = 1))$ \\
+3.8 & coolant\_basis\_4\_unsafe\_sfty.c & $\neg\forall\square(init \neq 3 \lor tem \leq limit \lor \forall\lozenge\forall\square(chainBroken = 1))$ \\
+3.9 & coolant\_basis\_5\_safe\_sfty.c & $ \forall(init = 0 \ U \ (\forall( init = 1 \ U \ \forall\square(init = 3)) \lor \forall\square(init = 1)))$ \\
+3.10 & coolant\_basis\_5\_safe\_cheat.c & $ \forall(init = 0 \ U \ (\forall( init = 1 \ U \ \forall\square(init = 3)) \lor \forall\square(init = 1)))$ \\
+3.11 & coolant\_basis\_5\_unsafe\_sfty.c & $ \neg\forall(init = 0 \ U \ (\forall( init = 1 \ U \ \forall\square(init = 3)) \lor \forall\square(init = 1)))$ \\
+3.12 & coolant\_basis\_6\_safe\_sfty.c & $\forall\square(limit \leq -273 \lor limit \geq 10 \lor tempIn \geq 0 \lor \forall\lozenge(warndLED = 1))$ \\
+3.13 & coolant\_basis\_6\_unsafe\_sfty.c & $\neg\forall\square(limit \leq -273 \lor limit \geq 10 \lor tempIn \geq 0 \lor \forall\lozenge(warndLED = 1))$ \\
+\hline
+4.1 & Bangalore\_false-no-overflow.c & $\exists\lozenge(x < 0)$ \\
+4.2 & Ex02\dots & $i < 5 \Rightarrow \forall\lozenge(exit: \mathtt{true})$ \\
+4.3 & Ex07\dots & $\forall\lozenge\forall\square(i = 0)$ \\
+4.4 & java\_Sequence\dots & $\forall\lozenge(\forall\lozenge(j \geq 21) \land i = 100)$ \\
+4.4 & Madrid\dots & $\forall\lozenge(x = 7 \land \forall\lozenge\forall\square(x = 2))$ \\
+4.4 & NO\_02\dots & $\forall\lozenge\forall\square(j = 0)$ \\
+\end{tabular}
+\caption{Table of test cases. Lists the number, program name and CTL property to be analyzed.}
+\label{tbl:test_cases}
+\end{table}
+
+
+
+\begin{table}
+\begin{tabular}{l l l l l}
+    \textbf{No} & \textbf{FuncTion} & \textbf{T2} & \textbf{Ultimate LTL}  \\
+    \hline
+    1.1 & success & fail & success \\
+    1.2 & success & fail & success \\
+    1.3 & success & success & success \\
+    1.4 & success & error & success \\
+    1.5 & success & success & success \\
+    1.6 & success & success & - \\
+    1.7 & success & error & success \\
+    1.8 & success & success & - \\
+    1.9 & success & fail & success \\
+    1.10 & success & success & - \\
+    1.11 & success & success & - \\
+    1.12 & success & success & - \\
+    \hline
+    2.1 & fail & success & success \\
+    2.2 & success & success & success \\
+    2.1 & fail & success & success \\
+    2.2 & success & success & success \\
+    2.2 & success & - & success \\
+    2.2 & fail & - & success \\
+    \hline
+    3.1 & success & - & success \\
+    3.2 & success & - & success \\
+    3.3 & success & - & success \\
+    3.4 & success & - & success \\
+    3.5 & success & - & success \\
+    3.6 & success & - & success \\
+    3.7 & success & - & success \\
+    3.8 & success & - & success \\
+    3.9 & fail & - & success \\
+    3.10 & success & - & success \\
+    3.11 & success & - & success \\
+    3.12 & success & - & success \\
+    3.13 & success & - & success \\
+    \hline
+    4.1 & success & success & - \\
+    4.2 & success & out of memory & - \\
+    4.3 & success & fail & - \\
+    4.4 & success & error & - \\
+    4.5 & success & error & - \\
+    4.6 & success & success & - \\
+\end{tabular}
+\caption{Table with results of test cases for FuncTion, T2 and Ultimate LTL Automizer.}
+\label{tbl:test_cases_results}
+\end{table}
+
+
+
+\section{Conclusion}
 
 \pagebreak
 
