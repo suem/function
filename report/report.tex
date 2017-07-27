@@ -330,18 +330,20 @@ One can determine if a state satisfies a liveness property by checking if the co
 assigns a value to said state. The assigned value is an upper bound on the number of steps until a goal state is reached.
 In this section we extend this proof method presented in~\cite{UrbanPhd} to CTL.\\
 
-CTL allows us to define liveness and safety properties. For liveness properties, ranking functions can be used as proof method. 
-However ranking functions are not suitable in the case of safety properties as there is no goal state to be reached eventually. 
-Because a CTL formula can arbitrarily combine liveness and safety properties we will use a \textit{degraded ranking function} as proof method. 
-Such a function $\tau_\Phi \in \Sigma \rightarrow \mathbb{N}$ assigns well-ordered values to states. 
-A state satisfies a CTL property $\Phi$ if it is assigned a value by $\tau_\Phi$. 
-However the actual values of this degraded ranking function are only relevant for liveness properties. In that case they encode 
-an upper bound on the number of steps until some goal states is reached. 
-Otherwise, for safety properties, the values are constant for each state and not relevant. 
+CTL can define both liveness and safety properties. For liveness properties, ranking functions can be used as proof method. 
+However, ranking functions are not suitable in the case of safety properties since there is no goal state to be reached eventually. 
+Because a CTL formula can arbitrarily combine liveness and safety properties we will use a \textit{counting function} 
+$\tau_\Phi \in \Sigma \rightarrow \mathbb{O}$ as proof method. 
+The function $\tau_\Phi$ is similar to a ranking function, it assigns well-ordered values to states. 
+A state satisfies a CTL property $\Phi$ if it is in the domain of $\tau_\Phi$. 
+However, as opposed to ranking functions, the value of the \textit{counting function} $\tau_\Phi$ is not guaranteed to 
+decrease. It will only decrease if $\Phi$ is a liveness property. 
+In that case, the value of the function is an upper bound on the number of steps until some goal states is reached. 
+Otherwise, in the case of safety properties, the value may be constant and is irrelevant. 
 We call $\tau_\Phi$ the \textit{CTL semantics} from now on.
 
 \begin{theorem}\label{thr:ctl_semantics}
-    The \textit{CTL semantics} for a given CTL formula $\Phi$ is a degraded ranking function 
+    The \textit{CTL semantics} for a given CTL formula $\Phi$ is a counting function 
     $\tau_{\Phi} \in \Sigma \rightarrow \mathbb{N}$. 
     It encodes the semantics of $\Phi$ for a given state transition 
     system $\langle \Sigma, \tau \rangle$ such that 
@@ -426,12 +428,27 @@ Fixed-point iterates are related to each other using the \textit{computational o
 This partial order relates functions in terms of expressiveness, i.e., for how many states can a function prove that the CTL property holds.
 
 \begin{definition}\label{def:computational_order}
-    Let $f, g \in \Sigma \rightarrow \mathbb{N}$. 
+    Let $f, g \in \Sigma \rightarrow \mathbb{O}$. 
     The \textit{computational order} $\sqsubseteq$ is defined as follows.
     \begin{align*}
         f \sqsubseteq g \iff \text{dom}(f) \subseteq \text{dom}(g) \land \forall x \in \text{dom}(f): f(x) \leq g(x) \\
     \end{align*}
 \end{definition}
+
+The \textit{CTL semantics} are not computable in general. In Section~\ref{sec:abstract_ctl_semantics} we will present a sound decidable
+abstraction of the \textit{CTL semantics}. Soundness is related to the \textit{approximation order} $\preceq$.
+
+\begin{definition}\label{def:approximation_order}
+    Let $f, g \in \Sigma \rightarrow \mathbb{O}$. 
+    The \textit{approximation order} $\preceq$ is defined as follows.
+    \begin{align*}
+        f \preceq g \iff \text{dom}(f) \supseteq \text{dom}(g) \land \forall x \in \text{dom}(g): f(x) \leq g(x) \\
+    \end{align*}
+\end{definition}
+
+The \textit{approximation order} ranks counting functions in terms of precision. A function $f$ is more precise than a function $g$ if
+it is defined over more states than $g$ and if the value is smaller for all states in the domain of $g$. Intuitively, a more precise 
+counting function is able to prove for more states that a CTL $\Phi$ holds or does not hold.
 
 \subsubsection*{Until}
 
@@ -444,7 +461,7 @@ The \textit{CTL semantics} for universal and existential \textsf{until} properti
 \phi_{\exists(\Phi_1 U \Phi_2)} &\in (\Sigma \rightarrow \mathbb{N}) \rightarrow (\Sigma \rightarrow \mathbb{N}))
 \end{align*}
 
-starting from the totally undefined degraded ranking function $\overset{.}{\emptyset}$.
+starting from the totally undefined counting function $\overset{.}{\emptyset}$.
 
 \begin{definition}\label{def:ctl_semantics_until}
     \textit{CTL semantics} for existential and universal \textsf{until} properties
@@ -484,7 +501,7 @@ $\forall(\Phi_1 U \Phi_2)$. These states are then assigned the largest ranking v
 By performing iterations this way, we backtrack paths in the state transition systems that end in a state satisfying $\Phi_2$ and which are preceded by an 
 unbroken chain of states satisfying $\Phi_1$. Every state on such a path is guaranteed to satisfy $\forall(\Phi_1 U \Phi_2)$. 
 Furthermore, by starting from $0$ at states that satisfy $\Phi_2$ and incrementing the value of the function while backtracking, 
-we construct a degraded ranking function such that the value assigned to each state is an 
+we construct a counting function such that the value assigned to each state is an 
 upper bound on the number of steps until a state satisfying $\Phi_2$ is reached.\\
 
 The $\widetilde{pre}$ relation guarantees that during the backtracking, only those states that
@@ -506,7 +523,7 @@ during the backtracking (see Definitions~\ref{def:pre} and~\ref{def:tilde_pre}).
 Figures~\ref{fig:ctl_semantics_universal_until} and~\ref{fig:ctl_semantics_existential_until} give an example on how the
 iterative computation for \textsf{until} properties works for universal and existential quantifiers. 
 Note how Figure~\ref{fig:ctl_semantics_existential_until} has one additional iteration because of the existential quantifier. 
-The initial state is added to the degraded ranking function in the last iteration because there exists one edge that leads to a state satisfying the property.  
+The initial state is added to the function in the last iteration because there exists one edge that leads to a state satisfying the property.  
 For the universal property, the iteration stops after three iterations because not all successor states
 of the initial state satisfy the property.
 
@@ -757,8 +774,8 @@ starting from the CTL semantics $\tau_\Phi$ of the inner CTL property.
 
 This definition is based on the \textit{recurrence semantics} presented in~\cite{UrbanM-VMCAI15}.
 As with the \textsf{until} operator, we distinguish between universal and existential properties by using either $\widetilde{pre}$ or $pre$. 
-The fixed-point iteration starts with the degraded ranking function $\tau_\Phi$ of the inner property $\Phi$.
-At each iteration, every state that is still part of the domain of the degraded ranking function is inspected. 
+The fixed-point iteration starts with the counting function $\tau_\Phi$ of the inner property $\Phi$.
+At each iteration, every state that is still part of the domain of the function is inspected. 
 The inspected state is kept in the domain of the function if \textit{all} its successor states 
 (or \textit{some} for the existential case) are also part of the domain of the function, otherwise it is removed.
 That way, only states which are part of an infinite path consisting exclusively of states satisfying $\Phi$ are kept in 
@@ -776,7 +793,7 @@ the domain of the function.
 
 
 Figures~\ref{fig:ctl_semantics_universal_global} and~\ref{fig:ctl_semantics_existential_global} show this for 
-$\tau_{\exists\square\Phi}$ and $\tau_{\forall\square\Phi}$. Both iterations start with some initial degraded ranking function $\tau_\Phi$.
+$\tau_{\exists\square\Phi}$ and $\tau_{\forall\square\Phi}$. Both iterations start with some initial counting function $\tau_\Phi$.
 In the first iteration state $b$ is removed because it has no outgoing edges. For the existential case, the iteration stops here because
 all remaining states $a$, $c$ and $d$ have at least one edge to a node thats part of the function. In the universal case we get an additional
 iteration that removes state $a$ because not all of its successor nodes (namely $b$) are part of the function. 
@@ -886,7 +903,7 @@ The \textsf{next} operator is path dependent but does not require fixed-point it
 A state satisfies $\forall\bigcirc\Phi$ if all its immediate successors satisfy the property $\Phi$,
 correspondingly $\exists\bigcirc\Phi$ is satisfied if at least one immediate successor satisfies the property $\Phi$. 
 This corresponds to the definition of the $\widetilde{pre}$ and $pre$ relations. Zero is assigned to each state
-that satisfies the property to construct a valid degraded ranking function according to Theorem~\ref{thr:ctl_semantics}.
+that satisfies the property to construct a valid counting function according to Theorem~\ref{thr:ctl_semantics}.
 
 \begin{definition}\label{def:ctl_semantics_next}
     Equations for CTL next operator
@@ -990,17 +1007,17 @@ refer to the incoming and outgoing edges of a node.
 
 \section{Decision Tree Abstract Domain}\label{sec:decision_tree_abstract_domain}
 
-This section briefly recaps the decision tree abstract domain. 
+This section briefly recaps the decision tree abstract domain~\cite{UrbanPhd}. 
 Decision trees encode piecewise-defined linear functions which are used as an abstraction 
-the of degraded ranking functions introduced in Section~\ref{sec:ranking_functions}. 
+of the counting functions introduced in Section~\ref{sec:ranking_functions}. 
 First we give a description of the decision tree abstract domain. 
 Then we introduce ordering relations between the elements of the domain and relevant operations on the elements of the domain. 
 An in-depth description of the topics covered in this section can be found in~\cite{UrbanPhd}.\\
 
 \subsection{Domain}
 
-The elements of the abstract domain are binary decision trees. The nodes of the trees are linear constrains and the leafs are linear functions.
-Decision trees partition the state space, given by a set of variables $\mathcal{X}$, into linear partitions. 
+The elements of the abstract domain are binary decision trees. The nodes of the trees are linear constraints and the leafs are linear functions
+of the program variables. Decision trees partition the state space, given by a set of variables $\mathcal{X}$, into partitions. 
 Each partition is defined through the conjunction of linear constraints on the path from root to leaf in the decision tree.
 The linear function at the leaf determines the value of the function for the corresponding partition of the state space.\\
 
@@ -1031,7 +1048,7 @@ It is defined for all states satisfying $x \leq 0 \land y \leq 0$ according to t
 The right most leaf is the function $\lambda x.\ 2x$, it is defined for all states satisfying $\neg (x \leq 0)$ 
 (following the right child of a node negates the linear constraint). The leaf in the middle is a bottom node, 
 signifying that the function for the corresponding partition is undefined. 
-In summary the decision tree in figure~\ref{fig:decision_tree_example} is equivalent to the following partial function:
+In summary the decision tree in Figure~\ref{fig:decision_tree_example} is equivalent to the following partial function:
 
 \[
     f(x, y) = \begin{cases}
@@ -1070,12 +1087,12 @@ the \textit{octagon abstract domain}~\cite{Mine:2006:OAD:1145489.1145526} or the
 
 Leafs of the decision trees are elements of the \textit{functions auxiliary abstract domain} $\mathcal{F}$.
 Elements of $\mathcal{F}$ are either natural valued linear functions or one of the two special elements $\top_{\mathcal{F}}$ or $\bot_{\mathcal{F}}$.
-The element $\bot_{\mathcal{F}}$ indicates that the value of the function is undefined for the given partition. 
+The element $\bot_{\mathcal{F}}$ indicates that the function is undefined on the given partition. 
 The element $\top_{\mathcal{F}}$ indicates that the value of the function is unknown for the given partition.
 \[
     \mathcal{F} \eqdef \{ \mathbb{Z}^{|\mathcal{X}|} \rightarrow \mathbb{N} \} \cup \{ \top_{\mathcal{F}}, \ \bot_{\mathcal{F}} \}
 \]
-We will write constant functions that return a value $n \in \mathbb{N}$ by just stating the constant value e.g. $0 \in \mathcal{F}$ 
+We will write constant functions that return a value $n \in \mathbb{N}$ by just stating the constant value, e.g., $0 \in \mathcal{F}$ 
 denotes the constant function that returns $0$ for every state.\\
 
 In the following sections we will distinguish between so called \textit{defined} and \textit{undefined} leafs. 
@@ -1104,24 +1121,49 @@ This adds an additional leaf element \texttt{NIL} to $\mathcal{T}$ to represent 
 \]
 
 
-\subsubsection*{Orders \& Abstractions}
+\subsubsection*{Sound Abstractions}
 
-Decision trees are used as an abstraction of degraded ranking functions. It is important to be able to reason about the soundness of this abstraction.
-For that purpose we will now introduce a number of partial orders which are then used to express soundness.\\
+Decision trees are an abstraction of counting functions.  
+A sound abstraction is defined in terms of the \textit{approximation order} $\preceq$ (see Definition~\ref{def:approximation_order}).\\
 
-For the elements of $\mathcal{F}$ we defined the \textit{computational order} $\sqsubseteq_{\mathcal{F}}$ 
-and \textit{approximation order} $\preceq_{\mathcal{F}}$.
+\begin{definition}\label{def:sound_abstraction}
+    Let $\gamma \in \mathcal{T} \rightarrow (\Sigma \rightarrow \mathbb{O}) $ be the concretization function from decision trees to counting functions.
+    A decision tree $t \in \mathcal{T}$ is a sound abstraction of a counting function $f \in \Sigma \rightarrow \mathbb{N}$ if $f \preceq \gamma(t)$.\\
+\end{definition}
+
+This definitions allows us to soundly define computable abstractions of counting functions. 
+Every decision tree computed in such a way captures the behavior of the concrete counting function for 
+all defined partitions of the tree.
+
+\subsubsection*{Orders}
+
+We now define the 
+\textit{computational order} $\sqsubseteq_{\mathcal{T}}$ and \textit{approximation order} $\preceq_{\mathcal{T}}$
+over elements of $\mathcal{T}$. These orders are an approximation of the corresponding orders presented in 
+Section~\ref{sec:ctl_semantics} (see Definitions~\ref{def:computational_order} and~\ref{def:approximation_order}).\\
+
+Both orders are defined by leaf-wise comparison of two decision trees. To that end we define the   
+\textit{computational order} $\sqsubseteq_{\mathcal{F}}$ and \textit{approximation order} $\preceq_{\mathcal{F}}$
+for elements of $\mathcal{F}$. Two trees are related to each other if all leafs 
+are pairwise related w.r.t. $\sqsubseteq_{\mathcal{F}}$ ($\preceq_{\mathcal{F}}$, respectively). 
+Please refer to~\cite{UrbanPhd} for a detailed explanation.\\
+
+The two orders $\sqsubseteq_{\mathcal{F}}$ and $\preceq_{\mathcal{F}}$ are identical for function values 
+$f \in \mathbb{Z}^{|\mathcal{X}|} \rightarrow \mathbb{N}$.
+Pairings with the special elements $\top_{\mathcal{F}}$ and $\bot_{\mathcal{F}}$ are related to each other according to the
+Hasse diagrams in Figure~\ref{fig:function_comp_approx_hasse}. 
 
 \begin{definition}\label{def:fun_comp_approx_order}
     The \textit{computation order} $\sqsubseteq_{\mathcal{F}}$ and \textit{approximation order} $\preceq_{\mathcal{F}}$
-    for elements  $f_1, f_2 \in \mathcal{F} \setminus \{\top_{\mathcal{F}}, \ \bot_{\mathcal{F}} \} $ is defined as follows.
+    for elements  $f_1, f_2 \in \mathcal{F} \setminus \{\top_{\mathcal{F}}, \ \bot_{\mathcal{F}} \} $ are defined as follows.
     \begin{align*}
         f_1 \sqsubseteq_{\mathcal{F}} f_2  \iff  f_1 \preceq_{\mathcal{F}} f_2 \iff
         \forall x \in \mathbb{Z}^{|\mathcal{X}|} \colon f_1(x) \leq f_2(x)
     \end{align*}
-    The special elements $\top_{\mathcal{F}}$ and $\bot_{\mathcal{F}}$ of $\mathcal{F}$ are ordered according to the Hasse 
-    diagrams in figure~\ref{fig:function_comp_approx_hasse}. 
 \end{definition}
+
+
+
 
 
 \begin{figure}
@@ -1129,7 +1171,7 @@ and \textit{approximation order} $\preceq_{\mathcal{F}}$.
         \centering
         \begin{tikzpicture}[]
             \node (top) at (0,2) {$\top_{\mathcal{F}}$};
-            \node (f) at (0,1) {$f \colon  \mathbb{Z}^{|\mathcal{X}|} \rightarrow \mathbb{N} $};
+            \node (f) at (0,1) {$f \colon \mathbb{Z}^{|\mathcal{X}|} \rightarrow \mathbb{N} $};
             \node (bot) at (0,0) {$\bot_{\mathcal{F}}$};
             \draw (top) -- (f) -- (bot);
         \end{tikzpicture}
@@ -1150,22 +1192,9 @@ and \textit{approximation order} $\preceq_{\mathcal{F}}$.
     \label{fig:function_comp_approx_hasse}
 \end{figure}
 
-Now we lift these orders to decision trees. The \textit{computational order} $\sqsubseteq_{\mathcal{T}}$ 
-and \textit{approximation order} $\preceq_{\mathcal{T}}$ are defined by leaf-wise comparison of two decision trees with the corresponding orders 
-$\sqsubseteq_{\mathcal{F}}$ and $\preceq_{\mathcal{F}}$. A more detailed description can be found in~\cite{UrbanPhd}. 
-Intuitively, the \textit{computational order} $\sqsubseteq_{\mathcal{T}}$ is an approximation of the \textit{computational order} $\sqsubseteq$ defined 
-in section~\ref{sec:ctl_semantics} (definition~\ref{def:computational_order}).
-The \textit{approximation order} $\preceq_{\mathcal{T}}$ is used to define sound abstractions.\\
-
-\begin{definition}\label{def:sound_abstraction}
-    Let $\alpha \in (\Sigma \rightarrow \mathbb{N}) \rightarrow \mathcal{T}$ be the abstraction function from degraded ranking functions to decision trees.
-    A decision tree $t \in \mathcal{T}$ is a sound abstraction of a ranking function $f \in \Sigma \rightarrow \mathbb{N}$ if:
-    \[\alpha(f) \preceq_{\mathcal{T}} t \]
-\end{definition}
-
 \subsection{Join}\label{sec:tree_join}
 Two trees can be joined to form the union of all partitions represented by the two trees. When joining two trees, they are first reshaped such
-that both trees consist of the same partitions. They only differ in the valus of the leafs. Then the two trees can be joined leaf-wise. 
+that both trees consist of the same partitions. They only differ in the values of the leafs. Then the two trees can be joined leaf-wise. 
 There are two join variations. 
 The \textit{computational join} $\sqcup_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$
 and the \textit{approximation join} $\curlyvee_{\mathcal{T}} \colon (\mathcal{T}_{NIL} \times \mathcal{T}_{NIL}) \rightarrow \mathcal{T}_{NIL}$. 
@@ -1246,18 +1275,6 @@ that is not $\mathtt{NIL}$. When both are $\mathtt{NIL}$ then the result of join
     \label{fig:decision_tree_join_example}
 \end{figure}
 
-\subsection{Widening and Dual Widening}\label{sec:tree_widen}
-The \textit{widening} operator $\triangledown_\mathcal{T} \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$
-is used to enforce convergence when computing increasing sequences of values in the decision tree abstract domain. 
-Once the sequence is stable for the \textit{computational order} $\sqsubseteq_\mathcal{T}$, 
-the limit of this sequence is guaranteed to be a sound approximation of the corresponding concrete degraded ranking function 
-w.r.t.\ the \textit{approximation order} $\preceq_{\mathcal{F}}$.
-The dual of this concept for decreasing sequences is called \textit{dual widening} 
-$\bar\triangledown_\mathcal{T} \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$.
-Intuitively, the widening operator tries to extrapolate the function values of decision trees to linear functions. This extrapolation is
-initially a guess. If the guess proves to be wrong, it is corrected by setting the corresponding partition to $\top_\mathcal{T}$ in future iterations.
-A thorough discussion about widening for elements of the decision tree abstract domain can be found in Section 5.2.4 of~\cite{UrbanPhd}.
-
 
 \subsection{Meet}\label{sec:tree_meet}
 The meet operator intersects the partitions of two decision trees. As with the join, both trees are first
@@ -1268,32 +1285,43 @@ Both combine defined leafs using the least upper bound w.r.t.\ $\preceq_{\mathca
 If at least one of the two leafs is \texttt{NIL}, then the result is $\bot_\mathcal{F}$ in case of the 
 \textit{computational meet} and \texttt{NIL} in case of the \textit{approximation meet}.
 
+\subsection{Widening and Dual Widening}\label{sec:tree_widen}
+The \textit{widening} operator $\triangledown_\mathcal{T} \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$
+is used to enforce convergence when computing increasing sequences of values in the decision tree abstract domain. 
+Once the sequence is stable for the \textit{computational order} $\sqsubseteq_\mathcal{T}$, 
+the limit of this sequence is guaranteed to be a sound approximation of the corresponding concrete counting function 
+w.r.t.\ the \textit{approximation order} $\preceq_{\mathcal{F}}$.
+The dual of this concept for decreasing sequences is called \textit{dual widening} 
+$\bar\triangledown_\mathcal{T} \colon (\mathcal{T}_\mathtt{NIL} \times \mathcal{T}_\mathtt{NIL}) \rightarrow \mathcal{T}_\mathtt{NIL}$.
+Intuitively, the widening operator tries to extrapolate the function values of decision trees to linear functions. This extrapolation is
+initially a guess. If the guess proves to be wrong, it is corrected by setting the corresponding partition to $\top_\mathcal{T}$ in future iterations.
+A thorough discussion about widening for elements of the decision tree abstract domain can be found in Section 5.2.4 of~\cite{UrbanPhd}.
+
 
 \subsection{Filter}\label{sec:tree_filter}
-The filter operator $\mathtt{FILTER}\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$
+The filter operator $\mathtt{FILTER}_o\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$
 prunes all partitions of a decision tree that do not satisfy the given boolean expression $bexp$. Leafs are pruned by replacing them with \texttt{NIL}.
-The regular version of \texttt{FILTER} prunes the partitions using over-approximation. 
+Partitions are pruned using over-approximation.
 That means that the resulting tree can still be defined for states that do not satisfy the boolean expression. It is however guaranteed that all states 
 that satisfy the boolean expression remain defined in the tree. In addition to the over-approximating version there is also the under-approximating version
-$\mathtt{FILTER\_UNDER}\llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$. Here the resulting decision
-tree is guaranteed to not contain any partitions that do not satisfy the boolean expressions. States that do satisfy it might be removed however if
+$\mathtt{FILTER}_u \llbracket bexp \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$. Here the resulting decision
+tree is guaranteed to not contain any partitions that do not satisfy the boolean expressions. However states that do satisfy it might be removed if
 the underlying numerical domain is not expressive enough.
 
 \subsection{Backward Assign}\label{sec:tree_bwd_assign}
-The operator $\mathtt{B\_ASSIGN}\llbracket X := \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$ handles
+The operator $\mathtt{ASSIGN}_o \llbracket X := \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$ handles
 the backward assignment of the arithmetic expression \texttt{aexp} to variable $X$. The linear constraints of the decision tree nodes and the 
-functions at the leafs are adjusted accordingly. $\mathtt{B\_ASSIGN}$ uses over-approximation on the underlying numerical domains. 
-As with the $\mathtt{FILTER}$ operator, there also exists an under-approximating version 
-$\mathtt{B\_ASSIGN\_UNDER}\llbracket X := \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$.
+functions at the leafs are adjusted accordingly. $\mathtt{ASSIGN}_o$ uses over-approximation on the underlying numerical domains. 
+As with the filter operator, there also exists an under-approximating version 
+$\mathtt{ASSIGN}_u \llbracket X := \mathtt{aexp} \rrbracket \colon \mathcal{T}_\mathtt{NIL} \rightarrow \mathcal{T}_\mathtt{NIL}$.
 
-\pagebreak
 
 \section{Abstract Semantics for CTL}\label{sec:abstract_ctl_semantics}
 
-The degraded ranking function $\tau_\Phi$ is in general not computable. 
+The counting function $\tau_\Phi$ is in general not computable. 
 In this section we present a sound and computable approximation of the \textit{CTL semantics} $\tau_\Phi$ defined in Section~\ref{sec:ctl_semantics}.
 We approximate $\tau_\Phi$ by using the decision tree abstract domain (Section~\ref{sec:decision_tree_abstract_domain}) 
-to approximate degraded ranking functions in terms of piecewise defined ranking functions.
+to approximate counting functions in terms of piecewise defined ranking functions.
 
 \begin{theorem}\label{thr:abstract_ctl_semantics}
     The abstract CTL semantics $\tau^{\sharp}_\Phi \in \mathcal{L} \rightarrow \mathcal{T}$ is a sound approximation of the
@@ -1319,17 +1347,17 @@ Note that the abstract CTL semantics are computed recursively. The recursion sto
 
 Atomic propositions are path independent, therefore $\tau^{\sharp}_a$ assigns the same decision tree to 
 each program label $l \in \mathcal{L}$. This decision tree assigns the constant function $0$ to all partitions that satisfy the atomic proposition $a$.
-We compute this tree by using the $\text{RESET} \llbracket a \rrbracket$ operator on the totally undefined decision tree $\bot_\mathcal{T}$. 
-The $\text{RESET}\llbracket a \rrbracket \colon \mathcal{T} \rightarrow \mathcal{T}$ operator takes as input a decision tree and returns a copy of 
+We compute this tree by using the $\mathtt{RESET} \llbracket a \rrbracket$ operator on the totally undefined decision tree $\bot_\mathcal{T}$. 
+The $\mathtt{RESET}\llbracket a \rrbracket \colon \mathcal{T} \rightarrow \mathcal{T}$ operator takes as input a decision tree and returns a copy of 
 said tree where every partition that satisfies $a$ is replaced with the constant function $0$. We refer the reader to~\cite{UrbanPhd}
-for a detailed description of the $\text{RESET}$ operator. Note however, that the implementation of $\text{RESET}$ in~\cite{UrbanPhd} 
-has a small error that can lead to unsoundness. This is discussed in the excursion below titled `\text{RESET} and over-approximation'.
+for a detailed description of the $\mathtt{RESET}$ operator. Note however, that the implementation of $\mathtt{RESET}$ in~\cite{UrbanPhd} 
+has a small error that can lead to unsoundness. This is discussed in the excursion below titled `$\mathtt{RESET}$ and over-approximation'.
 
 
 \begin{definition}\label{def:abstract_ctl_semantics_atomic}
     Abstract CTL semantics for atomic propositions
     \begin{align}
-        \tau^{\sharp}_{a} \eqdef \ \lambda l. \ \text{RESET} \llbracket a \rrbracket \bot_\mathcal{T}
+        \tau^{\sharp}_{a} \eqdef \ \lambda l. \ \mathtt{RESET} \llbracket a \rrbracket \bot_\mathcal{T}
     \end{align}
 \end{definition}
 
@@ -1340,15 +1368,15 @@ has a small error that can lead to unsoundness. This is discussed in the excursi
 
 
 \begin{tcolorbox}
-    \subsubsection*{\text{RESET} and over-approximation}
+    \subsubsection*{$\mathtt{RESET}$ and over-approximation}
 
-    The $\text{RESET}\llbracket a \rrbracket$ operator was originally introduced in~\cite{UrbanPhd} in the context of abstract guarantee semantics
+    The $\mathtt{RESET}\llbracket a \rrbracket$ operator was originally introduced in~\cite{UrbanPhd} in the context of abstract guarantee semantics
     and would over-approximate the set of partitions that satisfy the atomic proposition $a$. 
     During the work on this thesis, we discovered that this original definition is actually unsound and leads to incorrect analysis results.\\
     
     The problem is best described using an example. Consider the abstract CTL semantics $\tau^{\sharp}_{x^2 < y^3 + 1}$. 
     The non-linear constraint $x^2 < y^3 + 1$ can usually not be represented by any of the commonly used numerical domains. 
-    An over-approximating implementation of $\text{RESET}\llbracket x^2 < y^3 + 1 \rrbracket$ will therefore
+    An over-approximating implementation of $\mathtt{RESET}\llbracket x^2 < y^3 + 1 \rrbracket$ will therefore
     reset some pairs $(x, y)$ for which $x^2 < y^3 + 1$ does not hold which is unsound as to the definition of
     the CTL semantics $\tau_{x^2 < y^3 + 1}$. Note that this problem propagates to more complex temporal properties that
     depend on atomic propositions.\\
@@ -1366,7 +1394,7 @@ Now we define the abstract CTL semantics for the logical operators $\land$, $\lo
         \label{eq:abstract_ctl_and}\\
         \tau^{\sharp}_{\Phi_1 \lor \Phi_2} &\eqdef \ \lambda l. \ (\tau^{\sharp}_{\neg \Phi_1}l) \ \sqcap_{\mathcal{T}} \ (\tau^{\sharp}_{\neg \Phi_2}l)
         \label{eq:abstract_ctl_or}\\
-        \tau^{\sharp}_{\neg \Phi} &\eqdef \ \lambda l. \ \text{COMPLEMENT} \ (\tau^{\sharp}_{\neg \Phi}l)
+        \tau^{\sharp}_{\neg \Phi} &\eqdef \ \lambda l. \ \mathtt{COMPLEMENT} \ (\tau^{\sharp}_{\neg \Phi}l)
         \label{eq:abstract_ctl_not}
     \end{align}
 \end{definition}
@@ -1441,7 +1469,7 @@ The first one uses over-approximation on the underlying numerical domains, the s
 Both functions implement the effect of backward propagating an edge 
 in the control-flow-graph, i.e., the effect of executing a statement. 
 Assume that we have computed a decision tree for the target node of some edge. 
-This decision tree represents the value of the degraded ranking function for this node. 
+This decision tree represents the value of the counting function for this node. 
 By applying ${\llbracket \cdot \rrbracket}$ to this tree, we compute the decision tree 
 that holds before executing the statement, i.e.\, the value of the function at the source node of this edge.
 
@@ -1450,21 +1478,21 @@ that holds before executing the statement, i.e.\, the value of the function at t
 \begin{definition}\label{def:basic_expression_transformer}
     Abstract semantics for basic statements
     \begin{align*}
-        {\llbracket \mathtt{skip} \rrbracket}_o \eqdef \lambda t. \ \text{STEP}(t)\\
-        {\llbracket bexp \rrbracket}_o \eqdef \lambda t. \ \text{B-ASSIGN}(t)\\
-        {\llbracket X := aexp \rrbracket}_o \eqdef \lambda t. \ \text{FILTER}(t)\\
+        {\llbracket \mathtt{skip} \rrbracket}_o \eqdef \lambda t. \ \mathtt{STEP}(t)\\
+        {\llbracket bexp \rrbracket}_o \eqdef \lambda t. \ \mathtt{ASSIGN}_o(t)\\
+        {\llbracket X := aexp \rrbracket}_o \eqdef \lambda t. \ \mathtt{FILTER}_o(t)\\
         \\
-        {\llbracket \mathtt{skip} \rrbracket}_u \eqdef \lambda t. \ \text{STEP}(t)\\
-        {\llbracket bexp \rrbracket}_u \eqdef \lambda t. \ \text{B-ASSIGN-UNDER}(t)\\
-        {\llbracket X := aexp \rrbracket}_u \eqdef \lambda t. \ \text{FILTER-UNDER}(t)\\
+        {\llbracket \mathtt{skip} \rrbracket}_u \eqdef \lambda t. \ \mathtt{STEP}(t)\\
+        {\llbracket bexp \rrbracket}_u \eqdef \lambda t. \ \mathtt{ASSIGN}_u(t)\\
+        {\llbracket X := aexp \rrbracket}_u \eqdef \lambda t. \ \mathtt{FILTER}_u(t)\\
     \end{align*}
 \end{definition}
 
-The \texttt{skip} statement is handled by the STEP operator. This operator increases the value of all defined
+The \texttt{skip} statement is handled by the $\mathtt{STEP}$ operator. This operator increases the value of all defined
 partitions in the decision tree by one. Recall that a defined partition in a decision tree represents a set of states that satisfies 
 some CTL property. The associated value is an upper bound on the number of steps until some condition is reached. 
 By executing \texttt{skip} this number is incremented by one.
-For assignments and boolean conditions we use the corresponding B-ASSIGN and FILTER 
+For assignments and boolean conditions we use the corresponding \textit{assign} and \textit{filter}
 operators that were introduced in Sections~\ref{sec:tree_bwd_assign} and~\ref{sec:tree_filter}.
 The definitions for the remaining path dependent operators all depend on these two functions.
 
@@ -1842,7 +1870,7 @@ while (x > y) {
 
 Let us consider the program \textsf{test\_until}. If we assume that initially $x \geq y$ holds, one can show that the program satisfies 
 the property $\forall(x \geq y \ U \ x = y)$. FuncTion is able to infer the following 
-degraded ranking function for the entry porint of the program:
+counting function for the entry point of the program:
 
 \begin{align*}
 f(x, y) = \begin{cases}
