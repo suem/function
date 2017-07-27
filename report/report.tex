@@ -27,6 +27,8 @@
 
 \newcommand\eqdef{\mathrel{\overset{\makebox[0pt]{\mbox{\normalfont\tiny\sffamily def}}}{=}}}
 
+
+
 \setlength{\parindent}{0pt}
 
 \title{Proving Temporal Properties by Abstract Interpretation}
@@ -1849,7 +1851,9 @@ We did not pursue more involved intra-procedural analysis approaches since this 
 
 Existential CTL properties can be analyzed using the abstract semantics presented in Section~\ref{sec:abstract_ctl_semantics}. In addition to that, 
 it is also possible to convert existential properties to equivalent universal properties (see Section~\ref{sec:computation_tree_logic}). 
-This can yield more precise results in some cases.
+This can yield more precise results in some cases.\\
+
+Next we present an evaluation of the FuncTion CTL analysis capabilities. 
 
 \section{Evaluation}
 
@@ -1857,18 +1861,14 @@ This section presents the result of our evaluation of the CTL analysis capabilit
 First we present a few examples that demonstrate the kinds of properties FuncTion is able to analyze. 
 Then we present how FuncTion fares against other static analyzers.\\
 
-\begin{figure}[h]
-\centering
-\begin{lstlisting}[language=C, numbers=right, numbersep=1pt]
-while (x > y) {
-    x--;
-}
-\end{lstlisting}
-\caption{Program \textsf{test\_until}}
-\end{figure}
 
+\subsection{Examples}
 
-Let us consider the program \textsf{test\_until}. If we assume that initially $x \geq y$ holds, one can show that the program satisfies 
+We now demonstrate the capabilities and limitations of FuncTion with a number of example programs. 
+
+\subsubsection*{Example 1}
+
+Let us consider the program \textsf{test\_until}. Assuming that initially $x \geq y$ holds, one can show that the program satisfies 
 the property $\forall(x \geq y \ U \ x = y)$. FuncTion is able to infer the following 
 counting function for the entry point of the program:
 
@@ -1879,11 +1879,182 @@ f(x, y) = \begin{cases}
 \end{cases}
 \end{align*}
 
-It states that the program satisfies the CTL properties if $x \geq y$ holds initially. Furthermore, the goal of the \textit{until}
-property, $x = y$, will be reached in at most $2(x-y)$ program execution steps.
+This states that the program satisfies the CTL properties if $x \geq y$ holds initially. Furthermore, the goal of the \textit{until}
+property ($x = y$) is reached in at most $2(x-y)$ program execution steps.
+
+
+\begin{figure}
+    \begin{center}
+        \begin{tabular}{l}
+            \texttt{while} $(x > y)$ \texttt{do} \\
+            \hspace{1em}$x$ := $x - 1$ \\
+            \texttt{od}
+        \end{tabular}
+    \end{center}
+    \vspace{-1em}
+    \caption{Program \textsf{test\_until}}
+\end{figure}
 
 
 
+\subsubsection*{Example 2}
+
+Consider program \textsf{test\_global}. One can see that the property $\forall\lozenge\forall\square(y > 0)$ 
+is satisfied if $x < 10$ holds initially. FuncTion can prove this by deriving the following counting function:
+
+\begin{align*}
+f(x) = \begin{cases}
+    -2x + 32 & \text{if} \ x < 10 \\
+    undefined  & \text{otherwise}
+\end{cases}
+\end{align*}
+
+Given the precondition $x < 10$, the program will reach a state that satisfies $\forall\square(y > 10)$ in at most
+$-2x + 32$ steps.
+
+
+
+\begin{figure}
+    \begin{center}
+        \begin{tabular}{l}
+            $y$ := $0$ \\
+            \texttt{while} $(true)$ \texttt{do} \\
+            \hspace{1em}$x$ := $x + 1$ \\
+            \hspace{1em}\texttt{while} $(x = 10)$ \texttt{do} $y$ := $y + 1$ \\
+            \texttt{od}
+        \end{tabular}
+    \end{center}
+    \vspace{-1em}
+    \caption{Program \textsf{test\_global}}
+\end{figure}
+
+
+\subsubsection*{Example 3}
+The program \textsf{test\_existential\_1} initially sets $x$ to zero and assigns a random number to $i$.
+This value is then added to $x$ as long as $x \geq 0$. One can easily see that there exists 
+a choice for $i$ such that $x$ will eventually an arbitrary positive value. Therefore \textsf{test\_existential}
+satisfies the existential CTL property $\exists\lozenge(x > 2048)$. 
+FuncTion is able to infer the following counting function for the entry point of the function:
+
+
+\begin{align*}
+f(x) = \begin{cases}
+    0  & \text{if} \ x > 2048 \\
+    4  & \text{otherwise}
+\end{cases}
+\end{align*}
+
+Obviously the property is satisfied if the initial state already satisfies $x > 2048$. Otherwise there exists an execution trace
+where the property is satisfied in at most 4 steps.
+
+
+\begin{figure}
+    \begin{center}
+        \begin{tabular}{l}
+            $x$ := $0$ \\
+            $i$ := $?$ \\
+            \texttt{while} $(x \geq 0)$ \texttt{do} \\
+            \hspace{1em}$x$ := $x + i$ \\
+            \texttt{od}
+        \end{tabular}
+    \end{center}
+    \vspace{-1em}
+    \caption{Program \textsf{test\_existential\_1}}
+\end{figure}
+
+\subsubsection*{Example 4}
+The program \textsf{test\_existential\_2} increments $x$ an arbitrary amount of time. If $x$ reaches $200$ then $r$
+is set to $1$. This program satisfies the existential property $x < 200 \Rightarrow \exists\lozenge(r = 1)$. FuncTion
+proves this with the following counting function:
+
+\begin{align*}
+f(x) = \begin{cases}
+    -3x + 601  & \text{if} \ x < 200 \\
+    undefined  & \text{otherwise}
+\end{cases}
+\end{align*}
+
+If $x < 200$ then the program will set $r$ to $1$ in at most $-3x + 601$ steps.
+
+
+
+\begin{figure}
+    \begin{center}
+        \begin{tabular}{l}
+            $r$ := $0$ \\
+            \texttt{while} $(?)$ \texttt{do} \\
+            \hspace{1em}$x$ := $x + 1$ \\
+            \hspace{1em}\texttt{if} $(x = 200)$ \texttt{then} $r$ := $1$ \\
+            \texttt{od}
+        \end{tabular}
+    \end{center}
+    \vspace{-1em}
+    \caption{Program \textsf{test\_existential\_2}}
+\end{figure}
+
+
+
+
+
+\subsubsection*{Example 4}
+
+The program \textsf{acqrel} was taken from a set of example 
+programs\footnote{\url{https://github.com/ultimate-pa/ultimate/tree/dev/trunk/examples/LTL/koskinen}} 
+written by Koskinen for his PhD thesis~\cite{KoskinenPhd}. We assume that initially $a = r = 0$.
+The condition of the first loop is a non-deterministic choice, it is executed an arbitrary amount of times. 
+Whenever the loop is entered $a$ is set to $1$, eventually $r$ is set to $1$ after an arbitrary amount of steps, 
+depending on the choice for $n$. One can see that this program satisfies the property 
+$\forall\square((a = 1) \Rightarrow \forall\lozenge(r = 1))$. Unfortunately, FuncTion is not able to prove this.
+The reason for that stems from imprecision when dealing with non-determinism. Inside the loop, the analysis detects that 
+$r = 1$ holds and starts counting while backtracking through the inner loop. At the head of the inner loop,
+FuncTion has inferred that the goal $r = 1$ will be reached in at most $2n$ steps. Unfortunately, that information is lost when 
+performing the backward assignment $n := ?$ as FuncTion discards all information about $n$ if it is assigned a non-deterministic value.
+This behavior stems from the existing implementation of the decision tree abstract domain.\\
+
+We can solve this problem by slightly modifying \textsf{acqrel}. In program \textsf{acqrel-mod}, the choice for the number of inner loop executions is 
+moved to the start of the program. Since the information about $n$ is no longer relevant at the head of the outer loop, FuncTion is able to prove the 
+property for \textsf{acqrel-mod}.\\
+
+\begin{figure}
+    \begin{center}
+        \begin{tabular}{l}
+            $a$ := $0$ \\
+            $r$ := $0$ \\
+            \texttt{while} $(?)$ \texttt{do} \\
+            \hspace{1em}$a$ := $1$ \\
+            \hspace{1em}$a$ := $0$ \\
+            \hspace{1em}$n$ := $?$ \\
+            \hspace{1em}\texttt{while} $(n > 0)$ \texttt{do} $n$ := $n - 1$ \\
+            \hspace{1em}$r$ := $1$ \\
+            \hspace{1em}$r$ := $0$ \\
+            \texttt{od}\\
+            \texttt{while} $(true)$ \texttt{do} $skip$ \\
+        \end{tabular}
+    \end{center}
+    \vspace{-1em}
+    \caption{Program \textsf{acqrel}}
+\end{figure}
+
+\begin{figure}
+    \begin{center}
+        \begin{tabular}{l}
+            $a$ := $0$ \\
+            $r$ := $0$ \\
+            $n_{init}$ := $?$ \\
+            \texttt{while} $(?)$ \texttt{do} \\
+            \hspace{1em}$a$ := $1$ \\
+            \hspace{1em}$a$ := $0$ \\
+            \hspace{1em}$n$ := $n_{init}$\\
+            \hspace{1em}\texttt{while} $(n > 0)$ \texttt{do} $n$ := $n - 1$ \\
+            \hspace{1em}$r$ := $1$ \\
+            \hspace{1em}$r$ := $0$ \\
+            \texttt{od}\\
+            \texttt{while} $(true)$ \texttt{do} $skip$ \\
+        \end{tabular}
+    \end{center}
+    \vspace{-1em}
+    \caption{Program \textsf{acqrel-mod}}
+\end{figure}
 
 
 
