@@ -58,14 +58,14 @@ This is based on the definitions presented in~\cite{UrbanM-VMCAI15}.
 \begin{definition}
     A transition system is a tuple $\langle \Sigma, \tau \rangle$ where $\Sigma$ 
     is the set of all states in the system and $\tau \in \Sigma \times \Sigma$ 
-    is the so called transition relations that defines how one can transition from one state to the other.
+    is the relation that defines if one can transition from one state to the other (called \emph{transition relation}).
 \end{definition}
 
 Transition systems allow us to model the semantics of a program 
 independently of the programming language in which it was written. 
 By expressing the possible transition between states in terms of a relation, 
 it is also possible to capture nondeterminism. Figure~\ref{fig:basic_transition_system} 
-shows a simple transition system represented as directed graphs. States are represented as nodes
+shows a simple transition system represented as a directed graph. States are represented as nodes
 and state transitions as directed edges.
 \\
 
@@ -89,10 +89,10 @@ and state transitions as directed edges.
 
 
 We introduce the following auxiliary functions over states of a transition systems which will become 
-useful in section~\ref{sec:ctl_semantics} where we defined the semantics of CTL operators in terms of transition systems.
+useful in Section~\ref{sec:ctl_semantics} where we define the semantics of CTL operators in terms of transition systems.
 
 \begin{definition}\label{def:pre}
-    Given a transition system $\langle \Sigma, \tau \rangle$. $\text{pre} \colon \mathcal{P}(\Sigma) \to \mathcal{P}(\Sigma)$
+    Let $\langle \Sigma, \tau \rangle$ be a transition system. The function $\text{pre} \colon \mathcal{P}(\Sigma) \to \mathcal{P}(\Sigma)$
     maps a set of states $X \in \mathcal{P}(\Sigma)$ to the set of their predecessors with respect to the program transition
     relation $\tau$:
 \begin{equation}
@@ -102,7 +102,7 @@ useful in section~\ref{sec:ctl_semantics} where we defined the semantics of CTL 
 
 
 \begin{definition}\label{def:tilde_pre}
-    Given a transition system $\langle \Sigma, \tau \rangle$. $\widetilde{\text{pre}} \colon \mathcal{P}(\Sigma) \to \mathcal{P}(\Sigma)$
+    Let $\langle \Sigma, \tau \rangle$ be a transition system. The function $\widetilde{\text{pre}} \colon \mathcal{P}(\Sigma) \to \mathcal{P}(\Sigma)$
     maps a set of states $X \in \mathcal{P}(\Sigma)$ to the set of their predecessors with respect to the program transition
     relation $\tau$ with the limitation that only those predecessor states are selected which exclusively transition to states in $X$:
 \begin{equation}
@@ -111,7 +111,7 @@ useful in section~\ref{sec:ctl_semantics} where we defined the semantics of CTL 
 \end{definition}
 
 To get an intuition for the difference between $\widetilde{\text{pre}}$ and $\text{pre}$, consider the state transition system 
-depicted in figure~\ref{fig:basic_transition_system}. There it holds that $\text{pre}(\{b, d\}) = \{a, c\}$ 
+depicted in Figure~\ref{fig:basic_transition_system}. There it holds that $\text{pre}(\{b, d\}) = \{a, c\}$ 
 because $a$ is the predecessor of $b$ and $c$ the predecessor of $d$. 
 However note that $\widetilde{\text{pre}}(\{b, d\}) = \{c\}$ since only $c$ has 
 transitions that exclusively end up in either $b$ or $d$. 
@@ -797,7 +797,7 @@ the domain of the function.
 Figures~\ref{fig:ctl_semantics_universal_global} and~\ref{fig:ctl_semantics_existential_global} show this for 
 $\tau_{\exists\square\Phi}$ and $\tau_{\forall\square\Phi}$. Both iterations start with some initial counting function $\tau_\Phi$.
 In the first iteration state $b$ is removed because it has no outgoing edges. For the existential case, the iteration stops here because
-all remaining states $a$, $c$ and $d$ have at least one edge to a node thats part of the function. In the universal case we get an additional
+all remaining states $a$, $c$ and $d$ have at least one edge to a node that is part of the function. In the universal case we get an additional
 iteration that removes state $a$ because not all of its successor nodes (namely $b$) are part of the function. 
 Note that only infinite paths are considered to hold globally. 
 
@@ -937,12 +937,15 @@ that satisfies the property to construct a valid counting function according to 
 \section{Imperative Language}\label{sec:imperative_language}
 
 In this section we briefly introduce a minimal imperative programming language. 
-It will be used in section~\ref{sec:abstract_ctl_semantics} to define the abstract CTL semantics.
+It will be used in Section~\ref{sec:abstract_ctl_semantics} to define the abstract CTL semantics.
 The language has no procedures, pointers or recursion and is non-deterministic.
-Variables are integer valued ($\mathbb{Z}$) and statically allocated.\\
+Variables are integer valued and statically allocated. We chose a simple language to 
+keep the definitions of the abstract CTL semantics simple and concise. 
+However, the implementation of our static analyzer 
+will support a more feature-rich programming language (see Section~\ref{sec:implementation}).\\
 
 First we define the syntax for arithmetic and boolean expressions. 
-The syntax definitions are based on chapter 3 of~\cite{UrbanPhd}.
+The syntax definitions are based on Chapter 3 of~\cite{UrbanPhd}.
 
 \begin{definition}\label{def:arith_bool_syntax}
     Syntax for arithmetic and boolean expressions. \\
@@ -966,25 +969,23 @@ The semantics for expressions are defined as expected.
 Please refer to~\cite{UrbanPhd} for a formal definition. 
 Note that the symbol $?$ stands for non-deterministic choice.\\
 
-Programs are defined in terms as control-flow-graphs. The control-flow-graph models all possible program executions as
+Programs are defined in terms of control-flow-graphs. The control-flow-graph models all possible program executions as
 paths in the graph.
 
 \begin{definition}\label{def:control_flow_graph}
     Program representation as control-flow-graph. 
-    Let $\mathcal{L}$ be the set of program labels.
+    A control-flow-graph is a tuple $(\mathcal{L}, E)$.
+    $\mathcal{L}$ is the set of program labels, also called nodes. 
+    $E \subseteq (\mathcal{L} \times stmt \times \mathcal{L})$ is the set of edges in the control-flow-graph,
+    $stmt$ is the set of all program statements.
     \begin{align*}
         \setlength{\jot}{15pt}
         stmt \ ::= \ & \ \ \mathtt{skip} \\
         &| \ bexp \\
         &| \ X := aexp  && X \in \mathcal{X} \\
-        \\
-        edge \ \eqdef & \ \ \mathcal{L} \times stmt \times \mathcal{L}\\
-        cfg \ \eqdef & \ \ \mathcal{P}(\mathcal{L}) \times \mathcal{P}(edge)\\
-        prog \ \eqdef & \ \ cfg \times \mathcal{L} \times \mathcal{L}
     \end{align*}
 \end{definition}
 
-A control-flow-graph $(V, E) \in cfg$ consists of a set of nodes $V$ and edges $E$.
 Every control point of a program is assigned a label $l \in \mathcal{L}$. 
 The nodes in the control-flow-graph correspond to those labels. 
 An edge $(u, s, v) \in E$ states that one can transition from node
@@ -992,14 +993,14 @@ $u$ to $v$ by executing statement $s$.
 The \texttt{skip} statement transitions from one node to another without doing anything, 
 the boolean expression $bexp$ limits the set of states
 that are allowed to transition to the next node and the assignment $X := aexp$ assigns the value of the arithmetic expression $aexp$
-to the variable $X$. A program $((V, E), l_{entry}, l_{exit}) \in prog$ consists of a control-flow-graph and two special 
-nodes that defined the entry and exit point of the program.
+to the variable $X$. A program consists of a control-flow-graph and two special labels 
+$l_{entry}$ and $l_{exit}$ that denote the program entry and exit point.\\
 
 We introduce the following auxiliary functions on nodes of a control-flow-graph to 
 refer to the incoming and outgoing edges of a node.
 
 \begin{definition}\label{def:cfg_in}
-    Given a control-flow-graph $(V, E) \in cfg$ and some node $l \in V$
+    Given a control-flow-graph $(\mathcal{L}, E)$ and some node $l \in \mathcal{L}$
     \begin{align*}
         in(l) &\eqdef \{(u, s, v) \in E \ | \ v = l \}\\
         out(l) &\eqdef \{(u, s, v) \in E \ | \ u = l \}\\
@@ -1574,7 +1575,7 @@ function when processing statements to guarantee soundness.\\
 \end{lemma}
 
 Convergence of the least fixed-point iteration is guaranteed after a finite amount of iterations by using the widening operator $\triangledown_\mathcal{T}$ 
-(see Section~\ref{sec:tree_widen}). The decision tree computed for every node $l \in \mathcal{L}$ is guaranteed to converge by applying the folowing widening scheme 
+(see Section~\ref{sec:tree_widen}). The decision tree computed for every node $l \in \mathcal{L}$ is guaranteed to converge by applying the following widening scheme 
 ($\Phi_U$ is a placeholder for $\forall(\Phi_1 U \Phi_2)$ and $\exists(\Phi_1 U \Phi_2)$):
 
 \begin{align*}
@@ -1689,7 +1690,7 @@ The \texttt{MASK} operator is defined in Algorithm~\ref{alg:tree_mask}.
 
 Convergence of the greatest fixed-point iteration is guaranteed after a finite amount of iterations by using the dual 
 widening operator $\bar\triangledown_\mathcal{T}$  (see Section~\ref{sec:tree_widen}). 
-The decision tree computed for every node $l \in \mathcal{L}$ is guaranteed to converge by applying the folowing widening scheme 
+The decision tree computed for every node $l \in \mathcal{L}$ is guaranteed to converge by applying the following widening scheme 
 ($\Phi_G$ is a placeholder for $\forall\square\Phi$ and $\exists\square\Phi$):
 
 \begin{align*}
@@ -1786,91 +1787,96 @@ operator which sets all defined partitions to zero (see Algorithm~\ref{alg:tree_
 \end{algorithmic}
 \end{algorithm}
 
-\section{Implementation}
+Next we present how the abstract CTL semantics were implemented.
 
-This section describes how the CTL analysis was implemented for the 
-FuncTion Static Analyzer\footnote{\url{https://github.com/caterinaurban/function}}. 
+\section{Implementation}\label{sec:implementation}
+
+This section describes how the CTL analysis was implemented as part of the static analyzer
+FuncTion\footnote{\url{https://github.com/caterinaurban/function}}. 
 First, we briefly discuss the initial feature set of FuncTion, 
-followed by a description of the various extensions that were added to the analyzer.
+followed by a description of the various extensions that were added to the analyzer. 
+Then we present a number of examples that showcase the capabilities of FuncTion.
 
 \subsection{Previous Work}
-FuncTion is an abstract interpretation based static analyzer that was written by Caterina Urban 
+FuncTion is an abstract interpretation-based static analyzer that was written by Caterina Urban 
 in the context of her PhD thesis~\cite{UrbanPhd}. 
 When starting this thesis, FuncTion had support  for analyzing termination, guarantee properties and
 recurrence properties (see Section~\ref{sec:ranking_functions}). To that end, it featured an implementation of 
 the decision tree abstract domain (see Section~\ref{sec:decision_tree_abstract_domain}) with the corresponding \textit{join}, \textit{meet}, 
 \textit{widen} (but not \textit{dual-widen}), \textit{filter}, \textit{backward assign} and \textit{reset} operators.
-Note that the \textit{filter}, \text{backward assign} and $\text{reset}$ operators were all implemented using over-approximation. 
+Note that the \textit{filter} and \textit{reset} operators were implemented using over-approximation. The \textit{backward assign}
+operator over-approximates the assignment of each partition, the resulting decision tree however is an under-approximation 
+in case of termination, recurrence and guarantee analysis due to the use of the \textit{approximation join}.   
 The Apron\footnote{\url{http://apron.cri.ensmp.fr/library}} library was used as basis for the numerical domains. 
 FuncTion can analyze programs using the \textit{interval}, \textit{octagon} and \textit{polyhedra} abstract domain.
 Finally, FuncTion was equipped with a front-end for parsing programs written in a C-like language. 
-The termination analysis could only tail-recursive function calls. 
-The analysis of guarantee and recurrence properties could could not handle any function calls.
+The termination analysis could only handle tail-recursive function calls. 
+The analysis of guarantee and recurrence properties could not handle any function call.
 
 \subsection{CTL Analysis}
 
 The CTL analysis was implemented based on the existing components of FuncTion. We reused the implementation of the decision tree abstract domain
-and added implementations for the \textit{complement}, \textit{until} and \textit{mask} operators that we presented in Section~\ref{sec:abstract_ctl_semantics}.
-We also wrote an implementation of the \textit{dual-widen} operator which was defined in~\cite{UrbanPhd} but not actually implemented.\\
+and added implementations for the \textit{complement}, \textit{until} and \textit{mask} operators presented in Section~\ref{sec:abstract_ctl_semantics}.
+We also wrote an implementation of the \textit{dual-widen} operator which was defined in~\cite{UrbanPhd} but not implemented in FuncTion.\\
 
-The under-approximating implementations of the \textit{filter} and \textit{backward assign} required an under-approximating implementation of said
-operators on the underlying numerical abstract domains. Such an implementation for the polyhedra abstract domain was proposed by 
-Antoine Miné~\cite{DBLP:journals/entcs/Mine12} and implemented by him in the Banal Static Analyzer\footnote{\url{https://www-apr.lip6.fr/~mine/banal/}}.
+The analysis of existential properties is performed using the~\textit{computational join} (see Section~\ref{sec:abstract_ctl_semantics}), 
+therefore the original \textit{backward assign} operator no longer produces sound results due the 
+fact that it over-approximates the assignment of individual partitions. The same holds for the over-approximating \textit{filter} operator.
+Therefore, we required under-approximating implementations of both \textit{backward assign} an \textit{filter}.
+Such an implementation for the polyhedra numerical abstract domain was proposed by 
+Antoine Miné~\cite{DBLP:journals/entcs/Mine12} and implemented in the Banal Static Analyzer\footnote{\url{https://www-apr.lip6.fr/~mine/banal/}}.
 We were able to reuse his implementation in FuncTion which allowed us to provide under-approximating 
-version of \textit{filter} and \textit{backward assign} with
-minimal effort. In addition to that, the under-approximating version of \textit{filter} also allowed us to fix the unsoundness problem of the
-\textit{reset} operator which we discussed in Section~\ref{sec:abstract_ctl_semantics}.\\
+version of \textit{filter} and \textit{backward assign} with minimal effort. 
+In addition to that, the under-approximating version of \textit{filter} also allowed us to fix the unsoundness problem of the
+\textit{reset} operator which we discussed in Section~\ref{sec:abstract_ctl_semantics}. This resolves the problem for the 
+new CTL analysis and also the existing guarantee and recurrence analysis. 
+Note that every analysis that requires an under-approximating operator can only be 
+performed with the polyhedra numerical abstract domain at the moment\footnote{Banal supports the 
+    \textit{interval} and \textit{octagon} domain in theory but the implementation is currently broken due to a bug.}.
+This includes the existing recurrence and guarantee analysis due to the use of the \textit{reset} operator.\\
 
-The inital implementation of the CTL analysis in FuncTion reuses the existing front-end and performs the analysis through a backward analysis 
+The initial implementation of the CTL analysis in FuncTion reuses the existing front-end and performs the analysis through a backward analysis 
 on the abstract-syntax-tree. This had the drawback that the analyzer did not support control-flow statements such as \texttt{goto}, \texttt{continue}
 or \texttt{break}. Furthermore there was no support for function calls.
-These problems were later resolved by converting the analysis to a control-flow-graph based implementation. 
+These problems were later resolved by moving the analysis to a control-flow-graph based implementation. 
 This will be discussed in the next subsection. 
 
 \subsection{Improved Front-end}
-As mentioned previously the abstract-syntax-tree (AST) based CTL analysis had several drawbacks. Performing the analysis on the AST made it
+As mentioned the analysis based on abstract-syntax-trees (ASTs) had several drawbacks. Performing the analysis on the AST made it
 difficult to support \texttt{goto} statements and function calls. Therefore we changed the analysis to a control-flow-graph based analysis.
 To that end we reused an existing front-end\footnote{\url{https://www-apr.lip6.fr/~mine/enseignement/l3/2015-2016/project.html}}
-for a university course by Antoine Miné which features an abstract-syntax-tree to control-flow-graph conversion.\\
+which features an abstract-syntax-tree to control-flow-graph conversion.\\
 
-The new analysis implementation is based on a standard worklist algorithm~\cite{DBLP:books/daglib/0098888}. Nodes to be proccessed are 
-added to a worklist and processed in FIFO order. If the value of a node changes, all its predecessors are added to the worklist. 
-To improve performance, nodes are never added twice to the worklist.\\ 
+The new implementation of the backward analysis is based on a standard worklist algorithm~\cite{DBLP:books/daglib/0098888}. 
+Nodes added to the worklist are processed in FIFO order. To improve performance, nodes are never added twice.\\ 
 
 Widening is only performed at loop heads. To that end, we implemented a simple loop-detection algorithm. 
 First we check if the control-flow-graph is reducible. Then we detect loop heads by 
 finding edges in the control-flow-graph where the head dominates its tail. The dominator tree is computed
-with a simple $O(mn)$ algorithm. Better algorithms exists~\cite{Lengauer:1979:FAF:357062.357071}, 
-however at the time of implementing the static analyzer, performance was not an issue.
+with a simple $O(mn)$ algorithm. The performance of this algorithm proved to be sufficient for all 
+analyzed test cases. Better algorithms exists~\cite{Lengauer:1979:FAF:357062.357071} should the need for 
+analyzing very large control-flow-graphs arise. 
 More information about loop-detection can be found in the corresponding literature~\cite{DBLP:books/aw/AhoSU87}.\\
 
 Non-recursive function calls are handled by inlining. Recursive calls are resolved by adding edges to the control-flow-graph
 from every call site to the entry node of the function and from the exit node of the function back to the call sites. 
 This approach leads to infeasible paths in the control-flow-graph. However the result of the analysis is still sound.
-We did not pursue more involved intra-procedural analysis approaches since this was not the focus the thesis.\\
+We did not pursue more involved intra-procedural analysis approaches since this was not the focus of our work.\\
 
 Existential CTL properties can be analyzed using the abstract semantics presented in Section~\ref{sec:abstract_ctl_semantics}. In addition to that, 
 it is also possible to convert existential properties to equivalent universal properties (see Section~\ref{sec:computation_tree_logic}). 
-This can yield more precise results in some cases.\\
-
-Next we present an evaluation of the FuncTion CTL analysis capabilities. 
-
-\section{Evaluation}
-
-This section presents the result of our evaluation of the CTL analysis capabilities of FuncTion. 
-First we present a few examples that demonstrate the kinds of properties FuncTion is able to analyze. 
-Then we present how FuncTion fares against other static analyzers.\\
+This can yield more precise results in some cases (see Example 6 in the next subsection).\\
 
 
-\subsection{Examples}
+\subsection{Examples}\label{sec:implementation_examples}
 
 We now demonstrate the capabilities and limitations of FuncTion with a number of example programs. 
 
 \subsubsection*{Example 1}
 
-Let us consider the program \textsf{test\_until}. Assuming that initially $x \geq y$ holds, one can show that the program satisfies 
-the property $\forall(x \geq y \ U \ x = y)$. FuncTion is able to infer the following 
-counting function for the entry point of the program:
+Consider the program \textsf{test\_until} in Figure~\ref{fig:test_until}. 
+One can show that the program satisfies the property $x \geq y \Rightarrow \forall(x \geq y \ U \ x = y)$. 
+FuncTion is able prove this with the following counting function:
 
 \begin{align*}
 f(x, y) = \begin{cases}
@@ -1893,26 +1899,25 @@ property ($x = y$) is reached in at most $2(x-y)$ program execution steps.
     \end{center}
     \vspace{-1em}
     \caption{Program \textsf{test\_until}}
+    \label{fig:test_until}
 \end{figure}
-
 
 
 \subsubsection*{Example 2}
 
-Consider program \textsf{test\_global}. One can see that the property $\forall\lozenge\forall\square(y > 0)$ 
-is satisfied if $x < 10$ holds initially. FuncTion can prove this by deriving the following counting function:
+Consider program \textsf{test\_global} in Figure~\ref{fig:test_global}. One can show that the property $\forall\lozenge\forall\square(y > 0)$ 
+is satisfied if $x < 10$ holds initially. In that case, the condition of the inner loop is reached eventually and we end up in a 
+loop that infinitely increments $y$. FuncTion can prove this by deriving the following counting function:
 
 \begin{align*}
 f(x) = \begin{cases}
-    -2x + 32 & \text{if} \ x < 10 \\
+    -3x + 32 & \text{if} \ x < 10 \\
     undefined  & \text{otherwise}
 \end{cases}
 \end{align*}
 
 Given the precondition $x < 10$, the program will reach a state that satisfies $\forall\square(y > 10)$ in at most
-$-2x + 32$ steps.
-
-
+$-3x + 32$ steps.
 
 \begin{figure}
     \begin{center}
@@ -1926,16 +1931,17 @@ $-2x + 32$ steps.
     \end{center}
     \vspace{-1em}
     \caption{Program \textsf{test\_global}}
+    \label{fig:test_global}
 \end{figure}
 
 
 \subsubsection*{Example 3}
-The program \textsf{test\_existential\_1} initially sets $x$ to zero and assigns a random number to $i$.
+The program \textsf{test\_existential\_1} in Figure~\ref{fig:test_existential_1} initially sets $x$ to zero and assigns a random number to $i$.
 This value is then added to $x$ as long as $x \geq 0$. One can easily see that there exists 
-a choice for $i$ such that $x$ will eventually an arbitrary positive value. Therefore \textsf{test\_existential}
-satisfies the existential CTL property $\exists\lozenge(x > 2048)$. 
-FuncTion is able to infer the following counting function for the entry point of the function:
-
+a choice for $i$ such that $x$ will eventually reach an arbitrary positive value. 
+For instance, one can show that \textsf{test\_existential\_1}
+satisfies the property $\exists\lozenge(x > 2048)$. 
+FuncTion infers the following counting function:
 
 \begin{align*}
 f(x) = \begin{cases}
@@ -1945,8 +1951,10 @@ f(x) = \begin{cases}
 \end{align*}
 
 Obviously the property is satisfied if the initial state already satisfies $x > 2048$. Otherwise there exists an execution trace
-where the property is satisfied in at most 4 steps.
-
+such that the property is satisfied in at most 4 steps. Unfortunately, FuncTion is not able to infer a more precise 
+counting function that depends on $i$ due to imprecision of the widening operator 
+and due to the fact that all information about $i$ is lost after performing the non deterministic assignment to $i$. 
+However the analysis is able to infer that for a large enough choice of $i$, the goal $x > 2048$ is satisfied after one loop iteration.
 
 \begin{figure}
     \begin{center}
@@ -1960,10 +1968,11 @@ where the property is satisfied in at most 4 steps.
     \end{center}
     \vspace{-1em}
     \caption{Program \textsf{test\_existential\_1}}
+    \label{fig:test_existential_1}
 \end{figure}
 
 \subsubsection*{Example 4}
-The program \textsf{test\_existential\_2} increments $x$ an arbitrary amount of time. If $x$ reaches $200$ then $r$
+The program \textsf{test\_existential\_2} in Figure~\ref{fig:test_existential_2} increments $x$ an arbitrary amount of time. If $x$ reaches $200$ then $r$
 is set to $1$. This program satisfies the existential property $x < 200 \Rightarrow \exists\lozenge(r = 1)$. FuncTion
 proves this with the following counting function:
 
@@ -1990,19 +1999,17 @@ If $x < 200$ then the program will set $r$ to $1$ in at most $-3x + 601$ steps.
     \end{center}
     \vspace{-1em}
     \caption{Program \textsf{test\_existential\_2}}
+    \label{fig:test_existential_2}
 \end{figure}
 
 
+\subsubsection*{Example 5}
 
-
-
-\subsubsection*{Example 4}
-
-The program \textsf{acqrel} was taken from a set of example 
+The program \textsf{acqrel} in Figure~\ref{fig:acqrel} was taken from a set of example 
 programs\footnote{\url{https://github.com/ultimate-pa/ultimate/tree/dev/trunk/examples/LTL/koskinen}} 
-written by Koskinen for his PhD thesis~\cite{KoskinenPhd}. We assume that initially $a = r = 0$.
+written by Eric Koskinen for his PhD thesis~\cite{KoskinenPhd}. We assume that initially $a = r = 0$.
 The condition of the first loop is a non-deterministic choice, it is executed an arbitrary amount of times. 
-Whenever the loop is entered $a$ is set to $1$, eventually $r$ is set to $1$ after an arbitrary amount of steps, 
+Whenever the loop is entered $a$ is set to $1$. Eventually $r$ is set to $1$ after an arbitrary amount of steps, 
 depending on the choice for $n$. One can see that this program satisfies the property 
 $\forall\square((a = 1) \Rightarrow \forall\lozenge(r = 1))$. Unfortunately, FuncTion is not able to prove this.
 The reason for that stems from imprecision when dealing with non-determinism. Inside the loop, the analysis detects that 
@@ -2011,9 +2018,24 @@ FuncTion has inferred that the goal $r = 1$ will be reached in at most $2n$ step
 performing the backward assignment $n := ?$ as FuncTion discards all information about $n$ if it is assigned a non-deterministic value.
 This behavior stems from the existing implementation of the decision tree abstract domain.\\
 
-We can solve this problem by slightly modifying \textsf{acqrel}. In program \textsf{acqrel-mod}, the choice for the number of inner loop executions is 
-moved to the start of the program. Since the information about $n$ is no longer relevant at the head of the outer loop, FuncTion is able to prove the 
-property for \textsf{acqrel-mod}.\\
+We can prove the property by slightly modifying \textsf{acqrel}. Consider program \textsf{acqrel-mod} in Figure~\ref{fig:acqrel_mod}. 
+The choice for the number of inner loop executions is moved to the start of the program. 
+Since the information about $n$ is no longer relevant at the head of the outer loop, 
+no information is lost when performing the non-deterministic assignment. FuncTion is able to prove the 
+property for \textsf{acqrel-mod}. Note that the property is a safety property. 
+Hence there is no counting information available for the program entry point. 
+The value of the derived counting function is $0$.
+However, FuncTion derives the following useful counting function for the body of the outer loop.
+
+\begin{align*}
+f(x) = \begin{cases}
+    2n_{init} + 5  & \text{if} \ n_{init} > 0 \\
+    5  & \text{otherwise}
+\end{cases}
+\end{align*}
+
+This states that once the program enters the outer loop, the goal of the lifeness property $\forall\lozenge(r = 1)$ is reached in at most 
+$2n_{init} + 5$ steps if $n_{init}$ is positive, in $5$ steps otherwise.
 
 \begin{figure}
     \begin{center}
@@ -2033,6 +2055,7 @@ property for \textsf{acqrel-mod}.\\
     \end{center}
     \vspace{-1em}
     \caption{Program \textsf{acqrel}}
+    \label{fig:acqrel}
 \end{figure}
 
 \begin{figure}
@@ -2054,8 +2077,71 @@ property for \textsf{acqrel-mod}.\\
     \end{center}
     \vspace{-1em}
     \caption{Program \textsf{acqrel-mod}}
+    \label{fig:acqrel_mod}
 \end{figure}
 
+\subsubsection*{Example 6}
+
+The duality between existential and universal CTL properties (see Section~\ref{sec:computation_tree_logic}) can improve the precision of 
+the analysis in some cases.  
+Consider program \textsf{test\_existential\_3} in Figure~\ref{fig:test_existential_3}. This program satisfies the existential property 
+$x > 0 \Rightarrow \exists\lozenge(r=1)$. Unfortunately, FuncTion is not able to prove this directly. 
+While FuncTion is able to show $x = 2 \Rightarrow \exists\lozenge(r=1)$, it fails for the stronger property due to imprecision. 
+However FuncTion successfully proves the equivalent universal property $x > 0 \Rightarrow \neg \forall\square(r \neq 1)$. 
+FuncTion can be configured to automatically convert all existential properties to their universal counterpart when possible.\\
+
+\begin{figure}
+    \begin{center}
+        \begin{tabular}{l}
+            $r$ := $0$ \\
+            \texttt{while} $(x > 0)$ \texttt{do} \\
+            \hspace{1em}$x$ := $x - 1$ \\
+            \hspace{1em}\texttt{if} $(?)$ \texttt{then} $r$ := $1$ \\
+            \texttt{od}
+        \end{tabular}
+    \end{center}
+    \vspace{-1em}
+    \caption{Program \textsf{test\_existential\_3}}
+    \label{fig:test_existential_3}
+\end{figure}
+
+
+Next we present an evaluation of the FuncTion CTL analysis capabilities. 
+
+\section{Evaluation}
+
+This section presents the result of our evaluation of the analysis capabilities of FuncTion for CTL properties. 
+We evaluated the capabilities of FuncTion based on series of test cases. To compare how FuncTion fares against other
+static analyzers, we ran the same test cases (where possible) on these other analyzers. 
+To following two static analyzers where chosen for a comparative analysis:\\
+
+
+\textbf{T2 Temporal Prover}\\
+The T2 Temporal Prover~\cite{DBLP:conf/tacas/BrockschmidtCIK16} is a static analyzer with support (among other things) for CTL properties.
+The analysis of CTL properties is based on the work of Cook et.\ al. \cite{DBLP:journals/fmsd/CookKV12}. T2 uses a control-flow-graph based
+program representation. Programs need to be convert to the T2 format by hand in most cases which makes analyzing larger C programs rather tedious.
+There exists an LLVM~\cite{Lattner:2004:LCF:977395.977673}
+backend \texttt{llvm2KITTeL}\footnote{\url{https://github.com/s-falke/llvm2kittel}} which converts LLVM bitcode to T2 format. 
+However, \texttt{llvm2KITTeL} removes dead assignments and renames variables due to the static-single-assignment format of LLVM. 
+This makes \texttt{llvm2KITTeL} unsuitable for this evaluation, since all CTL properties in our test cases depend on variable writes and 
+the original variable names defined in the C source code.\\
+
+\textbf{Ultimate LTL Automizer}\\
+Ultimate LTL Automizer~\cite{DBLP:conf/cav/DietschHLP15} 
+is part of the Ultimate program analysis framework\footnote{\url{https://ultimate.informatik.uni-freiburg.de}}. 
+It can analyze LTL properties of C programs. LTL and CTL share a common fragment but are not comparable in general~\cite{Baier:2008:PMC}.
+Therefore not all of our test cases can be run by Ultimate.\\
+
+Table~\ref{tbl:test_cases} lists all test cases and the corresponding CTL properties that were analyzed for the
+evaluation. The first set of test cases is a series of toy examples that demonstrate the basic capabilities of FuncTion (1.x). 
+The second set of test cases (2.x) were taken from Eric Kosinens PhD thesis~\cite{KoskinenPhd} and are publicly available on 
+GitHub\footnote{\url{https://github.com/ultimate-pa/ultimate/tree/dev/trunk/examples/LTL/koskinen}}. 
+Note that we only took a subset of these test cases since not all of them were 
+compatible with FuncTion due to arrays, pointers, structs etc. 
+The third set of test cases (3.x) are sample programs from 
+Ultimate LTL Automizer\footnote{\url{https://github.com/ultimate-pa/ultimate/tree/dev/trunk/examples/LTL/coolant}}. 
+The final set of test cases (4.x) are a selection of non-terminating programs from SV-Comp\footnote{\url{https://sv-comp.sosy-lab.org/2017}}. 
+The corresponding CTL properties were chosen by us.\\
 
 
 \begin{table}
@@ -2108,6 +2194,22 @@ property for \textsf{acqrel-mod}.\\
 \end{table}
 
 
+Table~\ref{tbl:test_cases_results} shows the results of running all test cases with FuncTion, T2 and Ultimate.\\
+
+The first set of test cases were converted to the T2 format by hand. 
+All test cases with non-existential properties were also executed on Ultimate since they are compatible with LTL.
+T2 struggles with some of the examples of the fist set. It even crashed for test cases 1.4 and 1.9\footnote{This was reported to the T2 team}.  
+Ultimate can handle all non-existential CTL properties of the first test set.\\
+
+In the second test set, FuncTion fails to verify test cases 2.1, 2.3 and 2.6. The reason for that stems from imprecision due to non-determinism 
+(see Example 5 in Section~\ref{sec:implementation_examples}). For the first two, we could mitigate the problem by adding slight adjustments. 
+Test cases 2.2 and 2.4 are the result. Ultimate was able to verify all examples of the second test set. 
+T2 verified the first four, the last two were too large to convert to the T2 format.\\
+
+All test cases of the third test set safe 3.9 could be successfully verified by FuncTion. As in the second test set, we had to slightly modify
+3.9 to pass (see 3.10). All test cases of the third set are rather large and contain function calls. Therefore we could not afford to translate them
+to T2 due to time limitations.\\
+
 
 \begin{table}
 \begin{tabular}{l l l l l}
@@ -2128,10 +2230,10 @@ property for \textsf{acqrel-mod}.\\
     \hline
     2.1 & fail & success & success \\
     2.2 & success & success & success \\
-    2.1 & fail & success & success \\
-    2.2 & success & success & success \\
-    2.2 & success & - & success \\
-    2.2 & fail & - & success \\
+    2.3 & fail & success & success \\
+    2.4 & success & success & success \\
+    2.5 & success & - & success \\
+    2.6 & fail & - & success \\
     \hline
     3.1 & success & - & success \\
     3.2 & success & - & success \\
@@ -2158,9 +2260,21 @@ property for \textsf{acqrel-mod}.\\
 \label{tbl:test_cases_results}
 \end{table}
 
+In the fourth test set we again compare FuncTion against T2. This yields a similar result as the first test set. 
+The CTL analysis capabilities of T2 seem to be rather error prone at this 
+point in time with makes it hard to draw a fair comparison.
+Furthermore, the T2 specific input format makes it difficult to run larger examples with T2.\\
 
+FuncTion comes close to the capabilities of Ultimate LTL Automizer when analyzing compatible LTL properties. 
+Ultimate was able to verify all LTL compatible test cases. 
+FuncTion, as opposed to Ultimate, struggles in some cases when dealing with non-determinism.  
+It is easy to pinpoint these problems and introduce adjustments that
+would lead to a successful analysis. This gives important insights for future improvements to FuncTion. 
+The benefit of FuncTion over Ultimate is that it can analyze existential properties and that 
+it provides more information when analyzing liveness properties due to the derived counting functions.\\
 
-\section{Conclusion}
+In conclusion, we believe that our CTL analysis framework is able to keep up with 
+other available static analyzers.
 
 \pagebreak
 
