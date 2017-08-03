@@ -45,10 +45,116 @@
 
 \section{Introduction}
  
-Motivation etc.
+Temporal logic is a widely accepted language for the specification of the intended behavior of various systems 
+(operating systems, embedded systems, network communication protocols, etc.). 
+Powerful tools have emerged over the years for proving temporal logic properties of programs.
+Useful properties that temporal logic allows to express are safety properties like partial correctness (i.e., the program does not produce the wrong answer), 
+mutual exclusion (i.e., two processes are not in their critical section at the same time), 
+and deadlock-freedom (i.e., the program does not reach a deadlock state), 
+and liveness properties like termination (i.e., the program eventually terminates), 
+and starvation freedom (i.e., a process eventually receives service).\\
+
+Abstract interpretation is a general theory for approximating the semantics of a program that was 
+developed by Patrick Cousot and Radhia Cousot in the late 1970s. 
+Recently, Cousot and Cousot developed an abstract interpretation framework for proving termination~\cite{CousotCousot-POPL12}. 
+This framework uses abstract interpretation to derive \emph{ranking functions}. These functions assign an upper bound of steps until termination
+to program states. Caterina Urban and Antoine Miné extended this framework to the analysis of 
+\emph{guarantee properties} and \emph{recurrence properties}~\cite{UrbanM-VMCAI15}.
+Termination, \emph{guarantee} and \emph{recurrence} properties are lifeness properties. 
+A lifeness property states that, during the execution of a program, something good will happen eventually. 
+Termination is a liveness property that states that a program terminates eventually, 
+\emph{guarantee properties} state that some general desired program state will be reached eventually, 
+\emph{recurrence properties} state that some general desired program state will be reached infinitely often.\\
+
+This thesis extends the existing framework for analyzing guarantee and recurrence properties to 
+general temporal properties specified in Computation-Tree-Logic (CTL).
+CTL is a temporal logic for specifying the behavior of state transition systems~\cite{baier2008principles}. 
+It can be used to formulate various temporal properties. For instance, the previously mentioned lifeness properties can all be formulated in CTL. 
+In addition to liveness properties, CTL can also formulate safety properties. A safety property states the something bad never happens.\\
+When dealing with non-deterministic programs, it is often of interest to quantify over the set of possible program executions. 
+Either one wants to reason about all possible program executions, or, one is interested in the existence 
+of at least one possible program execution that satisfies a given properties. 
+These two kinds of properties are called universal and existential temporal properties and both can be expressed in CTL.\\
+
+We demonstrate the capabilities of CTL with the program \textsf{SAMPLE} in Figure~\ref{fig:introduction_sample}. 
+We assume $x>0$ to hold at the begin of the program.
+\textsf{SAMPLE} performs a non-deterministic error check. If there is no error $x$ is decremented until it reaches the value $0$.
+Because of the non-determinism error check, this program has two possible execution traces, one where the if-block is entered and one
+where it is not. Consider the CTL property $\neg error \Rightarrow \forall(0 < x \leq 10 \ U \ x = 0)$. 
+Informally the property states that if a state is reached where $error = 0$, i.e., the
+if-block is entered, then $0 < x \leq 10$ holds among all possible execution traces until a state is reached where $x=0$ holds
+(a formal definition of CTL can be found in Section~\ref{sec:computation_tree_logic}). Due to the non-deterministic error check only one of the
+two program traces decrement $x$ as stated in the property. 
+This fact can be expressed with the CTL property $\exists(0 < x \leq 10 \ U \ x = 0)$. This states that there exists at least one execution trace
+where $0 < x \leq 10$ holds until a state is reached where $x = 0$ holds. This example demonstrates the difference between universal and existential 
+CTL properties and it shows the expressiveness of CTL. Note that there are temporal logic systems like CTL$^{*}$
+that are strictly more expressive than CTL. We chose CTL because it is a natural extension of 
+the previous work on the analysis of liveness properties with abstract interpretation.\\
 
 
-\section{State Transition Systems}
+\begin{figure}
+    \begin{center}
+        \begin{tabular}{l}
+            $assume(x \geq 0)$ \\
+            \texttt{if} $(no\_error())$ \texttt{do} \\
+            \hspace{1em}$error$ := $0$ \\
+            \hspace{1em}\texttt{while} $(x > 0)$ \texttt{do} \\
+            \hspace{2em}$x$ := $x - 1$ \\
+            \hspace{1em}\texttt{od}\\
+            \texttt{od}
+        \end{tabular}
+    \end{center}
+    \vspace{-1em}
+    \caption{Program \textsf{SAMPLE}}
+    \label{fig:introduction_sample}
+\end{figure}
+
+Our framework proves CTL properties by deriving \emph{counting functions}. A counting function is a partial function that assigns 
+natural numbers to program states. A program satisfies a given CTL property if the initial state is in the domain of this function. 
+If the CTL property is a liveness property, i.e., the property states that some goal state will be reached eventually, 
+then the value of the counting function is an upper bound on the number of steps until the goal is reached. 
+Otherwise, the value of the function is irrelevant. Counting functions are an adaptation of ranking functions 
+as defined in~\cite{CousotCousot-POPL12} and~\cite{UrbanM-VMCAI15}.\\
+
+Consider the property 
+$\exists(0 < x \leq 10 \ U \ x = 0)$ from the previous example. This property is a liveness property that states that eventually $x = 0$ holds.
+Our framework derives the following counting function for the initial program state.
+
+\begin{align*}
+f(x) = \begin{cases}
+    2x + 2 & \text{if} \ x \geq 0 \\
+    0 & \text{if} \ x = 0 \\
+    \text{undefined}    & \text{otherwise}
+\end{cases}
+\end{align*}
+
+If the initial value of $x$ is greater than $0$ then the goal of the liveness property is reached in exactly $2x + 2$ program execution steps.
+It takes $0$ steps if the goal is already reached. Otherwise the function is undefined stating that the analysis does not know if the property 
+is satisfied if $x < 0$. In this case it is clear that the property is not satisfied for $x < 0$, however the analysis will not be able to 
+prove or disprove all CTL properties.\\
+
+Deciding if a CTL property is satisfied is in general undecidable. We achieve a decidable approximating of counting function by performing
+the analysis on the decision tree abstract domain which was introduced in~\cite{UrbanPhd}. This domain defines counting functions in terms of 
+piecewise-defined linear functions.\\
+
+An implementation of the CTL analysis presented in this thesis was added to the FuncTion static analyzer. 
+We conducted an evaluation of the FuncTion CTL analysis capabilities which suggests that our implementation is on par with other static analyzers
+for temporal properties.\\
+
+The remainder of this thesis is structured as follows. 
+Sections~\ref{sec:state_transition_system} and~\ref{sec:computation_tree_logic} formally define state transition systems and Computation-Tree-Logic.
+Then Section~\ref{sec:ranking_functions} introduces ranking functions and the prove techniques on which the main work of this thesis is built on. 
+Section~\ref{sec:ctl_semantics} defines the concrete semantics of the CTL analysis for state transition systems. 
+In Section~\ref{sec:imperative_language} we introduce a simple imperative programming language. 
+Section~\ref{sec:decision_tree_abstract_domain} introduces the decision tree abstract domain which is then used in Section~\ref{sec:abstract_ctl_semantics} 
+to define the abstract CTL semantics for programs written in the previously introduced imperative language. 
+Section~\ref{sec:implementation} talks about the implementation for 
+FuncTion and Section~\ref{sec:evaluation} presents the evaluation of said implementation. 
+Finally Section~\ref{sec:conclusion} concludes the work conducted for this thesis and gives an outlook for future work.\\
+
+We assume that the reader is familiar with the theory of abstract interpretation. 
+
+\section{State Transition Systems}\label{sec:state_transition_system}
 
 To be able to analyze the behavior of a program, it is necessary 
 to express said behavior through a mathematical model. 
@@ -71,7 +177,7 @@ and state transitions as directed edges.
 
 \begin{figure}
 \centering
-\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=1.5cm,semithick]
+\begin{tikzpicture}[->,>=stealth',shorten >=3pt,auto,node distance=1.5cm,semithick]
     \tikzset{every state/.style={minimum size=0pt}}
 
     \node[state] (A)                    {$a$};
@@ -2108,7 +2214,7 @@ FuncTion can be configured to automatically convert all existential properties t
 
 Next we present an evaluation of the FuncTion CTL analysis capabilities. 
 
-\section{Evaluation}
+\section{Evaluation}\label{sec:evaluation}
 
 This section presents the result of our evaluation of the analysis capabilities of FuncTion for CTL properties. 
 We evaluated the capabilities of FuncTion based on series of test cases. To compare how FuncTion fares against other
@@ -2275,6 +2381,10 @@ it provides more information when analyzing liveness properties due to the deriv
 
 In conclusion, we believe that our CTL analysis framework is able to keep up with 
 other available static analyzers.
+
+\section{Conclusion}\label{sec:conclusion}
+TODO
+\subsection{Future Work}
 
 \pagebreak
 
