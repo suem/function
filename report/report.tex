@@ -1935,6 +1935,9 @@ in case of termination, recurrence and guarantee analysis due to the use of the 
 Note that something similar happens with \textit{filter} when merging control flows.
 The Apron\footnote{\url{http://apron.cri.ensmp.fr/library}} library was used as basis for the numerical domains. 
 FuncTion can analyze programs using the \textit{interval}, \textit{octagon} and \textit{polyhedra} abstract domain.
+In addition to natural-value ranking functions, the decision tree abstract domain 
+can also handle ordinal-valued ranking functions~\cite{UrbanM-ESOP14}. 
+This makes it possible to infer ranking functions for programs with unbounded non-determinism.
 Finally, FuncTion was equipped with a front-end for parsing programs written in a C-like language. 
 The termination analysis could only handle tail-recursive function calls. 
 The analysis of guarantee and recurrence properties could not handle any function call.
@@ -2337,15 +2340,16 @@ All test cases with non-existential properties were also executed on Ultimate si
 T2 struggles with some of the examples of the fist set. It even crashed for test cases 1.4 and 1.9\footnote{This was reported to the T2 team}.  
 Ultimate can handle all non-existential CTL properties of the first test set.\\
 
-In the second test set, FuncTion fails to verify test cases 2.1, 2.3 and 2.6. The reason for that stems from imprecision due to non-determinism 
-(see Example 5 in Section~\ref{sec:implementation_examples}). For the first two, we could mitigate the problem by adding slight adjustments. 
-Test cases 2.2 and 2.4 are the result. Ultimate was able to verify all examples of the second test set. 
+In the second test set, FuncTion fails to verify test cases 2.3 and 2.6 due to imprecision of the decision tree abstract domain. 
+Test case 2.4 is a slightly modified version of 2.3 that FuncTion is able to verify.
+Ultimate was able to verify all examples of the second test set. 
 T2 verified the first four, the last two were too large to convert to the T2 format.\\
 
-All test cases of the third test set safe 3.9 could be successfully verified by FuncTion. As in the second test set, we had to slightly modify
-3.9 to pass (see 3.10). All test cases of the third set are rather large and contain function calls. Therefore we could not afford to translate them
-to T2 due to time limitations.\\
-
+All test cases of the third test set safe 3.9, 3.15 and 3.16 could be successfully verified by FuncTion. 
+As in the second test set, test case 3.10 is a slightly modified version of 3.9 that FuncTion is able to verify.
+All test cases of the third set are rather large and contain function calls. Therefore we could not afford to translate them
+to T2 due to time limitations. Ultimate LTL Automizer successfully verified all test cases of the third set. 
+This was to be expected since the test cases are examples taken from the Ultimate LTL Automizer repository.\\
 
 \begin{table}
 \scriptsize\begin{tabular}{l l l l l}
@@ -2364,7 +2368,7 @@ to T2 due to time limitations.\\
     1.11 & success & success & - \\
     1.12 & success & success & - \\
     \hline
-    2.1 & fail & success & success \\
+    2.1 & success$^*$ & success & success \\
     2.2 & success & success & success \\
     2.3 & fail & success & success \\
     2.4 & success & success & success \\
@@ -2388,8 +2392,8 @@ to T2 due to time limitations.\\
     3.15 & fail & - & success \\
     3.16 & fail & - & success \\
     3.17 & success & - & success \\
-    3.18 & success & - & success \\
-    3.19 & success & - & success \\
+    3.18 & success$^*$  & - & success \\
+    3.19 & success$^*$  & - & success \\
     3.20 & success & - & success \\
     3.21 & success & - & success \\
     3.22 & success & - & success \\
@@ -2401,7 +2405,8 @@ to T2 due to time limitations.\\
     4.5 & success & error & - \\
     4.6 & success & success & - \\
 \end{tabular}
-\caption{Table with results of test cases for FuncTion, T2 and Ultimate LTL Automizer.}
+\caption{Table with results of test cases for FuncTion, T2 and Ultimate LTL Automizer. 
+    The resulting counting functions of test cases marked with $^*$ are ordinal-valued.}
 \label{tbl:test_cases_results}
 \end{table}
 
