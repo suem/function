@@ -40,6 +40,19 @@
 
 \maketitle
 
+\begin{abstract}
+    The intended behavior of a program can be specified with temporal logic. Computation-Tree-Logic (CTL) is 
+    a temporal logic that quantifies over possible program executions in the face of non-determinism. 
+    It can state properties about all possible program executions and about the existence of some possible program execution.
+    In this thesis we present a static analysis framework based on abstract interpretation for verifying if a program satisfies a given CTL property. 
+    In case of liveness properties, properties that state that something good happens eventually, 
+    the result of the analysis indicates how long the program will take at most until the good outcome is reached.
+    The analysis is implemented in the research prototype static analyzer FuncTion. An initial evaluation suggests that FuncTion is on 
+    par with other existing comparable static analyzers for temporal properties.
+\end{abstract}
+
+
+
 \tableofcontents
 \clearpage
 
@@ -48,43 +61,44 @@
 Temporal logic is a widely accepted language for the specification of the intended behavior of various systems 
 (operating systems, embedded systems, network communication protocols, etc.). 
 Powerful tools have emerged over the years for proving temporal logic properties of programs.
-Useful properties that temporal logic allows to express are safety properties like partial correctness (i.e., the program does not produce the wrong answer), 
+Useful properties that temporal logic allows to express are \emph{safety properties} such as partial correctness (i.e., the program does not produce the wrong answer), 
 mutual exclusion (i.e., two processes are not in their critical section at the same time), 
 and deadlock-freedom (i.e., the program does not reach a deadlock state), 
-and liveness properties like termination (i.e., the program eventually terminates), 
+and \emph{liveness properties} such as termination (i.e., the program eventually terminates), 
 and starvation freedom (i.e., a process eventually receives service).\\
 
-Abstract interpretation is a general theory for approximating the semantics of a program that was 
+Abstract interpretation~\cite{Cousot:1977:AIU:512950.512973} is a general theory for approximating the behavior of programs that was 
 developed by Patrick Cousot and Radhia Cousot in the late 1970s. 
 Recently, Cousot and Cousot developed an abstract interpretation framework for proving termination~\cite{CousotCousot-POPL12}. 
-This framework uses abstract interpretation to derive \emph{ranking functions}. These functions assign an upper bound of steps until termination
+This framework uses abstract interpretation to derive \emph{ranking functions}. These functions assign an upper bound on the number of steps until termination
 to program states. Caterina Urban and Antoine Miné extended this framework to the analysis of 
 \emph{guarantee properties} and \emph{recurrence properties}~\cite{UrbanM-VMCAI15}.
-Termination, \emph{guarantee} and \emph{recurrence} properties are lifeness properties. 
-A lifeness property states that, during the execution of a program, something good will happen eventually. 
+Termination, \emph{guarantee} and \emph{recurrence} properties are liveness properties. 
 Termination is a liveness property that states that a program terminates eventually, 
-\emph{guarantee properties} state that some general desired program state will be reached eventually, 
+\emph{guarantee properties} state that some general desired program state will be reached eventually during program execution and 
 \emph{recurrence properties} state that some general desired program state will be reached infinitely often.\\
 
 This thesis extends the existing framework for analyzing guarantee and recurrence properties to 
 general temporal properties specified in Computation-Tree-Logic (CTL).
 CTL is a temporal logic for specifying the behavior of state transition systems~\cite{baier2008principles}. 
-It can be used to formulate various temporal properties. For instance, the previously mentioned lifeness properties can all be formulated in CTL. 
-In addition to liveness properties, CTL can also formulate safety properties. A safety property states the something bad never happens.\\
+It can be used to express various temporal properties. For instance, the previously mentioned liveness properties can all be expressed in CTL. 
+In addition to liveness properties, CTL can also express safety properties.\\
+
 When dealing with non-deterministic programs, it is often of interest to quantify over the set of possible program executions. 
 Either one wants to reason about all possible program executions, or, one is interested in the existence 
-of at least one possible program execution that satisfies a given properties. 
+of at least one possible program execution that satisfies a given property. 
 These two kinds of properties are called universal and existential temporal properties and both can be expressed in CTL.\\
 
-We demonstrate the capabilities of CTL with the program \textsf{SAMPLE} in Figure~\ref{fig:introduction_sample}. 
-We assume $x>0$ to hold at the begin of the program.
-\textsf{SAMPLE} performs a non-deterministic error check. If there is no error $x$ is decremented until it reaches the value $0$.
-Because of the non-determinism error check, this program has two possible execution traces, one where the if-block is entered and one
+We now show two example CTL properties for the program \textsf{SAMPLE} in Figure~\ref{fig:introduction_sample}. 
+We assume $x>0$ at the start of the program. \textsf{SAMPLE} first assigns a random number to $error$. 
+The purpose of this is to model possible runtime errors. 
+If there is no error then $x$ is decremented until it reaches the value $0$.
+Because of the non-deterministic error check, this program has two possible execution traces, one where the if-block is entered and one
 where it is not. Consider the CTL property $\neg error \Rightarrow \forall(0 < x \leq 10 \ U \ x = 0)$. 
-Informally the property states that if a state is reached where $error = 0$, i.e., the
+Informally the property states that if a state is reached where $\neg error$ hold, i.e., the
 if-block is entered, then $0 < x \leq 10$ holds among all possible execution traces until a state is reached where $x=0$ holds
 (a formal definition of CTL can be found in Section~\ref{sec:computation_tree_logic}). Due to the non-deterministic error check only one of the
-two program traces decrement $x$ as stated in the property. 
+two program traces modifies $x$ as stated in the property. 
 This fact can be expressed with the CTL property $\exists(0 < x \leq 10 \ U \ x = 0)$. This states that there exists at least one execution trace
 where $0 < x \leq 10$ holds until a state is reached where $x = 0$ holds. This example demonstrates the difference between universal and existential 
 CTL properties and it shows the expressiveness of CTL. Note that there are temporal logic systems like CTL$^{*}$
@@ -96,8 +110,8 @@ the previous work on the analysis of liveness properties with abstract interpret
     \begin{center}
         \begin{tabular}{l}
             $assume(x \geq 0)$ \\
-            \texttt{if} $(no\_error())$ \texttt{do} \\
-            \hspace{1em}$error$ := $0$ \\
+            $error$ := ? \\
+            \texttt{if} $(\neg error)$ \texttt{do} \\
             \hspace{1em}\texttt{while} $(x > 0)$ \texttt{do} \\
             \hspace{2em}$x$ := $x - 1$ \\
             \hspace{1em}\texttt{od}\\
@@ -109,16 +123,18 @@ the previous work on the analysis of liveness properties with abstract interpret
     \label{fig:introduction_sample}
 \end{figure}
 
-Our framework proves CTL properties by deriving \emph{counting functions}. A counting function is a partial function that assigns 
+Our framework proves CTL properties by inferring \emph{counting functions}. 
+A counting function is a partial function that assigns 
 natural numbers to program states. A program satisfies a given CTL property if the initial state is in the domain of this function. 
-If the CTL property is a liveness property, i.e., the property states that some goal state will be reached eventually, 
+If the CTL property is a liveness property, i.e., a property stating that some goal state will be reached eventually, 
 then the value of the counting function is an upper bound on the number of steps until the goal is reached. 
-Otherwise, the value of the function is irrelevant. Counting functions are an adaptation of ranking functions 
+Otherwise, the value of the function has no particular meaning. Counting functions are an adaptation of ranking functions 
 as defined in~\cite{CousotCousot-POPL12} and~\cite{UrbanM-VMCAI15}.\\
 
 Consider the property 
-$\exists(0 < x \leq 10 \ U \ x = 0)$ from the previous example. This property is a liveness property that states that eventually $x = 0$ holds.
-Our framework derives the following counting function for the initial program state.
+$\exists(0 < x \leq 10 \ U \ x = 0)$ from the previous example. This property is a liveness property that states that $x = 0$ holds eventually for at least
+one possible program execution. Our framework derives the following counting function for the initial program state 
+through backward interpretation of the control-flow-graph of the program. 
 
 \begin{align*}
 f(x) = \begin{cases}
@@ -134,23 +150,26 @@ is satisfied if $x < 0$. In this case it is clear that the property is not satis
 prove or disprove all CTL properties.\\
 
 Deciding if a CTL property is satisfied is in general undecidable. We achieve a decidable approximating of counting function by performing
-the analysis on the decision tree abstract domain which was introduced in~\cite{UrbanPhd}. This domain defines counting functions in terms of 
-piecewise-defined linear functions.\\
+the analysis on the decision tree abstract domain introduced in~\cite{UrbanPhd}. This abstract domain approximates counting functions in terms of 
+piecewise-defined linear functions. We extend this domain with new operators for analyzing CTL properties. Existential CTL properties
+require the addition of under-approximating operators for the abstract domain.\\
 
 An implementation of the CTL analysis presented in this thesis was added to the FuncTion static analyzer. 
-We conducted an evaluation of the FuncTion CTL analysis capabilities which suggests that our implementation is on par with other static analyzers
+We conducted an evaluation of the FuncTion CTL analysis capabilities which suggests that our implementation is on par with other comparable static analyzers
 for temporal properties.\\
 
 The remainder of this thesis is structured as follows. 
-Sections~\ref{sec:state_transition_system} and~\ref{sec:computation_tree_logic} formally define state transition systems and Computation-Tree-Logic.
-Then Section~\ref{sec:ranking_functions} introduces ranking functions and the prove techniques on which the main work of this thesis is built on. 
-Section~\ref{sec:ctl_semantics} defines the concrete semantics of the CTL analysis for state transition systems. 
+Sections~\ref{sec:state_transition_system} and~\ref{sec:computation_tree_logic} formally define state transition systems and CTL.
+Section~\ref{sec:ranking_functions} introduces ranking functions and the existing techniques for proving liveness, 
+guarantee and recurrence properties on which this thesis is based on.
+Section~\ref{sec:ctl_semantics} defines how to verify if a state transition systems satisfies a CTL property.
 In Section~\ref{sec:imperative_language} we introduce a simple imperative programming language. 
-Section~\ref{sec:decision_tree_abstract_domain} introduces the decision tree abstract domain which is then used in Section~\ref{sec:abstract_ctl_semantics} 
-to define the abstract CTL semantics for programs written in the previously introduced imperative language. 
-Section~\ref{sec:implementation} talks about the implementation for 
-FuncTion and Section~\ref{sec:evaluation} presents the evaluation of said implementation. 
-Finally Section~\ref{sec:conclusion} concludes the work conducted for this thesis and gives an outlook for future work.\\
+This language is used as an example for the definition of the CTL analysis. 
+Section~\ref{sec:decision_tree_abstract_domain} introduces the decision tree abstract domain which is then used 
+in Section~\ref{sec:abstract_ctl_semantics} where the CTL analysis is defined for the previously introduced imperative language. 
+Section~\ref{sec:implementation} presents the implementation for 
+FuncTion and Section~\ref{sec:evaluation} presents the experimental evaluation. 
+Finally Section~\ref{sec:conclusion} concludes and gives an outlook for future work.\\
 
 We assume that the reader is familiar with the theory of abstract interpretation. 
 
@@ -1075,14 +1094,14 @@ The semantics for expressions are defined as expected.
 Please refer to~\cite{UrbanPhd} for a formal definition. 
 Note that the symbol $?$ stands for non-deterministic choice.\\
 
-Programs are defined in terms of control-flow-graphs. The control-flow-graph models all possible program executions as
+Programs are defined in terms of control-flow-graphs. The control-flow-graph of a program models all possible program executions as
 paths in the graph.
 
 \begin{definition}\label{def:control_flow_graph}
-    Program representation as control-flow-graph. 
+    \textbf{Program representation as control-flow-graph.}
     A control-flow-graph is a tuple $(\mathcal{L}, E)$.
     $\mathcal{L}$ is the set of program labels, also called nodes. 
-    $E \subseteq (\mathcal{L} \times stmt \times \mathcal{L})$ is the set of edges in the control-flow-graph,
+    $E \subseteq (\mathcal{L} \times stmt \times \mathcal{L})$ is the set of edges in the control-flow-graph where
     $stmt$ is the set of all program statements.
     \begin{align*}
         \setlength{\jot}{15pt}
@@ -1098,7 +1117,7 @@ An edge $(u, s, v) \in E$ states that one can transition from node
 $u$ to $v$ by executing statement $s$. 
 The \texttt{skip} statement transitions from one node to another without doing anything, 
 the boolean expression $bexp$ limits the set of states
-that are allowed to transition to the next node and the assignment $X := aexp$ assigns the value of the arithmetic expression $aexp$
+that are allowed to transition to the next node to the one satisfying $bexp$ and the assignment $X := aexp$ assigns the value of the arithmetic expression $aexp$
 to the variable $X$. A program consists of a control-flow-graph and two special labels 
 $l_{entry}$ and $l_{exit}$ that denote the program entry and exit point.\\
 
@@ -1907,12 +1926,13 @@ Then we present a number of examples that showcase the capabilities of FuncTion.
 FuncTion is an abstract interpretation-based static analyzer that was written by Caterina Urban 
 in the context of her PhD thesis~\cite{UrbanPhd}. 
 When starting this thesis, FuncTion had support  for analyzing termination, guarantee properties and
-recurrence properties (see Section~\ref{sec:ranking_functions}). To that end, it featured an implementation of 
+recurrence properties (see Section~\ref{sec:ranking_functions}). To this end, it featured an implementation of 
 the decision tree abstract domain (see Section~\ref{sec:decision_tree_abstract_domain}) with the corresponding \textit{join}, \textit{meet}, 
 \textit{widen} (but not \textit{dual-widen}), \textit{filter}, \textit{backward assign} and \textit{reset} operators.
-Note that the \textit{filter} and \textit{reset} operators were implemented using over-approximation. The \textit{backward assign}
+Note that the \textit{reset} operator was over-approximating. The \textit{backward assign}
 operator over-approximates the assignment of each partition, the resulting decision tree however is an under-approximation 
-in case of termination, recurrence and guarantee analysis due to the use of the \textit{approximation join}.   
+in case of termination, recurrence and guarantee analysis due to the use of the \textit{approximation join}.
+Note that something similar happens with \textit{filter} when merging control flows.
 The Apron\footnote{\url{http://apron.cri.ensmp.fr/library}} library was used as basis for the numerical domains. 
 FuncTion can analyze programs using the \textit{interval}, \textit{octagon} and \textit{polyhedra} abstract domain.
 Finally, FuncTion was equipped with a front-end for parsing programs written in a C-like language. 
@@ -1926,8 +1946,8 @@ and added implementations for the \textit{complement}, \textit{until} and \texti
 We also wrote an implementation of the \textit{dual-widen} operator which was defined in~\cite{UrbanPhd} but not implemented in FuncTion.\\
 
 The analysis of existential properties is performed using the~\textit{computational join} (see Section~\ref{sec:abstract_ctl_semantics}), 
-therefore the original \textit{backward assign} operator no longer produces sound results due the 
-fact that it over-approximates the assignment of individual partitions. The same holds for the over-approximating \textit{filter} operator.
+therefore the original \textit{backward assign} operator cannot be reused due to the 
+fact that it over-approximates the assignment of individual partitions. The same holds for the original \textit{filter} operator.
 Therefore, we required under-approximating implementations of both \textit{backward assign} an \textit{filter}.
 Such an implementation for the polyhedra numerical abstract domain was proposed by 
 Antoine Miné~\cite{DBLP:journals/entcs/Mine12} and implemented in the Banal Static Analyzer\footnote{\url{https://www-apr.lip6.fr/~mine/banal/}}.
@@ -2060,7 +2080,8 @@ Obviously the property is satisfied if the initial state already satisfies $x > 
 such that the property is satisfied in at most 4 steps. Unfortunately, FuncTion is not able to infer a more precise 
 counting function that depends on $i$ due to imprecision of the widening operator 
 and due to the fact that all information about $i$ is lost after performing the non deterministic assignment to $i$. 
-However the analysis is able to infer that for a large enough choice of $i$, the goal $x > 2048$ is satisfied after one loop iteration.
+However the analysis is able to infer that for a large enough choice of $i$, the goal $x > 2048$ is satisfied after one loop iteration which takes exactly 
+4 program steps.
 
 \begin{figure}
     \begin{center}
@@ -2140,7 +2161,7 @@ f(x) = \begin{cases}
 \end{cases}
 \end{align*}
 
-This states that once the program enters the outer loop, the goal of the lifeness property $\forall\lozenge(r = 1)$ is reached in at most 
+This states that once the program enters the outer loop, the goal of the liveness property $\forall\lozenge(r = 1)$ is reached in at most 
 $2n_{init} + 5$ steps if $n_{init}$ is positive, in $5$ steps otherwise.
 
 \begin{figure}
@@ -2274,21 +2295,30 @@ The corresponding CTL properties were chosen by us.\\
 2.5 & win4.c & $\forall\lozenge\forall\square(WItemsNum \geq 1)$ \\
 2.6 & toylin.c & $(c \leq 5 \land c > 0) \lor \forall\lozenge(resp > 5)$ \\
 \hline
-3.1 & coolant\_basis\_1\_safe\_sfty.c & $\forall\square((chainBroken = 1) \Rightarrow \forall\square(chainBroken = 1))$ \\
-3.2 & coolant\_basis\_1\_unsafe\_sfty.c & $\neg \forall\square((chainBroken = 1) \Rightarrow \forall\square(chainBroken = 1))$ \\
-3.3 & coolant\_basis\_2\_safe\_lifeness.c & $\forall\square\forall\lozenge(otime < time)$ \\
-3.4 & coolant\_basis\_2\_unsafe\_lifeness.c & $\neg \forall\square\forall\lozenge(otime < time)$ \\
-3.5 & coolant\_basis\_3\_safe\_sfty.c & $\forall\square((init = 3) \Rightarrow \forall\square\forall\lozenge(time > otime))$ \\
-3.6 & coolant\_basis\_3\_unsafe\_sfty.c & $\neg \forall\square((init = 3) \Rightarrow \forall\square\forall\lozenge(time > otime))$ \\
-3.7 & coolant\_basis\_4\_safe\_sfty.c & $\forall\square(init \neq 3 \lor tem \leq limit \lor \forall\lozenge\forall\square(chainBroken = 1))$ \\
-3.8 & coolant\_basis\_4\_unsafe\_sfty.c & $\neg\forall\square(init \neq 3 \lor tem \leq limit \lor \forall\lozenge\forall\square(chainBroken = 1))$ \\
-3.9 & coolant\_basis\_5\_safe\_sfty.c & $ \forall(init = 0 \ U \ (\forall( init = 1 \ U \ \forall\square(init = 3)) \lor \forall\square(init = 1)))$ \\
-3.10 & coolant\_basis\_5\_safe\_cheat.c & $ \forall(init = 0 \ U \ (\forall( init = 1 \ U \ \forall\square(init = 3)) \lor \forall\square(init = 1)))$ \\
-3.11 & coolant\_basis\_5\_unsafe\_sfty.c & $ \neg\forall(init = 0 \ U \ (\forall( init = 1 \ U \ \forall\square(init = 3)) \lor \forall\square(init = 1)))$ \\
-3.12 & coolant\_basis\_6\_safe\_sfty.c & $\forall\square(limit \leq -273 \lor limit \geq 10 \lor tempIn \geq 0 \lor \forall\lozenge(warndLED = 1))$ \\
-3.13 & coolant\_basis\_6\_unsafe\_sfty.c & $\neg\forall\square(limit \leq -273 \lor limit \geq 10 \lor tempIn \geq 0 \lor \forall\lozenge(warndLED = 1))$ \\
+3.1 & cb\_1\_safe\_sfty.c & $\forall\square((cb = 1) \Rightarrow \forall\square(cb = 1))$ \\
+3.2 & cb\_1\_unsafe\_sfty.c & $\neg \forall\square((cb = 1) \Rightarrow \forall\square(cb = 1))$ \\
+3.3 & cb\_2\_safe\_lifeness.c & $\forall\square\forall\lozenge(ot < t)$ \\
+3.4 & cb\_2\_unsafe\_lifeness.c & $\neg \forall\square\forall\lozenge(ot < t)$ \\
+3.5 & cb\_3\_safe\_sfty.c & $\forall\square((i = 3) \Rightarrow \forall\square\forall\lozenge(t> ot))$ \\
+3.6 & cb\_3\_unsafe\_sfty.c & $\neg \forall\square((i = 3) \Rightarrow \forall\square\forall\lozenge(t> ot))$ \\
+3.7 & cb\_4\_safe\_sfty.c & $\forall\square(i \neq 3 \lor tem \leq lim \lor \forall\lozenge\forall\square(cb = 1))$ \\
+3.8 & cb\_4\_unsafe\_sfty.c & $\neg\forall\square(i \neq 3 \lor tem \leq lim \lor \forall\lozenge\forall\square(cb = 1))$ \\
+3.9 & cb\_5\_safe\_sfty.c & $ \forall(i = 0 \ U \ (\forall( i = 1 \ U \ \forall\square(i = 3)) \lor \forall\square(i = 1)))$ \\
+3.10 & cb\_5\_safe\_cheat.c & $ \forall(i = 0 \ U \ (\forall( i = 1 \ U \ \forall\square(i = 3)) \lor \forall\square(i = 1)))$ \\
+3.11 & cb\_5\_unsafe\_sfty.c & $ \neg\forall(i = 0 \ U \ (\forall( i = 1 \ U \ \forall\square(i = 3)) \lor \forall\square(i = 1)))$ \\
+3.12 & cb\_6\_safe\_sfty.c & $\forall\square(lim \leq -273 \lor lim \geq 10 \lor ti \geq 0 \lor \forall\lozenge(wl = 1))$ \\
+3.13 & cb\_6\_unsafe\_sfty.c & $\neg\forall\square(lim \leq -273 \lor lim \geq 10 \lor ti \geq 0 \lor \forall\lozenge(wl = 1))$ \\
+3.14 & nestedRandomLoop\dots & $\forall\square(i \geq n)$ \\
+3.15 & timer-simple.c & $\neg \forall\square(timer = 0 \Rightarrow \forall\lozenge(output = 1))$ \\
+3.16 & togglecounter\dots & $\forall\square(\forall\lozenge(t=1) \land \forall\lozenge(t=0))$ \\
+3.17 & toggletoggle\dots & $\forall\square(\forall\lozenge(t=1) \land \forall\lozenge(t=0))$ \\
+3.18 & PotentialMinimize\dots & $\forall\square(x > 0 \Rightarrow \forall\lozenge(y=0))$ \\
+3.19 & cav2015.c & $\forall\square(x > 0 \Rightarrow \forall\lozenge(y=0))$ \\
+3.20 & simple-1.c & $\forall\lozenge(x > 10000)$ \\
+3.21 & simple-2.c & $\forall\lozenge(x > 100)$ \\
+3.22 & Bug\_NoLoop\dots & $\neg\forall\lozenge(ap>2)$ \\
 \hline
-4.1 & Bangalore\_false-no-overflow.c & $\exists\lozenge(x < 0)$ \\
+4.1 & Bangalore\dots & $\exists\lozenge(x < 0)$ \\
 4.2 & Ex02\dots & $i < 5 \Rightarrow \forall\lozenge(exit: \mathtt{true})$ \\
 4.3 & Ex07\dots & $\forall\lozenge\forall\square(i = 0)$ \\
 4.4 & java\_Sequence\dots & $\forall\lozenge(\forall\lozenge(j \geq 21) \land i = 100)$ \\
@@ -2318,7 +2348,7 @@ to T2 due to time limitations.\\
 
 
 \begin{table}
-\begin{tabular}{l l l l l}
+\scriptsize\begin{tabular}{l l l l l}
     \textbf{No} & \textbf{FuncTion} & \textbf{T2} & \textbf{Ultimate LTL}  \\
     \hline
     1.1 & success & fail & success \\
@@ -2354,6 +2384,15 @@ to T2 due to time limitations.\\
     3.11 & success & - & success \\
     3.12 & success & - & success \\
     3.13 & success & - & success \\
+    3.14 & success & - & success \\
+    3.15 & fail & - & success \\
+    3.16 & fail & - & success \\
+    3.17 & success & - & success \\
+    3.18 & success & - & success \\
+    3.19 & success & - & success \\
+    3.20 & success & - & success \\
+    3.21 & success & - & success \\
+    3.22 & success & - & success \\
     \hline
     4.1 & success & success & - \\
     4.2 & success & out of memory & - \\
@@ -2380,11 +2419,56 @@ The benefit of FuncTion over Ultimate is that it can analyze existential propert
 it provides more information when analyzing liveness properties due to the derived counting functions.\\
 
 In conclusion, we believe that our CTL analysis framework is able to keep up with 
-other available static analyzers.
+other available static analyzers. The next section concludes the results of this thesis and discusses possible future work.
 
+\pagebreak
 \section{Conclusion}\label{sec:conclusion}
-TODO
+
+This section concludes the work conducted for this thesis and gives an outline for future work.\\
+
+Our main contribution is an abstract interpretation based static analysis framework for CTL.
+The framework inductively defines the concrete semantics of arbitrary combinations of CTL operators for state transition system. 
+We present a sound, computable approximation of the concrete semantics that is based on the decision-tree abstract domain.
+Our approach for analyzing existential CTL properties is based on under-approximation operators 
+for the domain of piecewise-defined ranking functions.\\
+
+We provide an experimental implementation of our framework as part of the FuncTion static analyzer. 
+A series of test-cases demonstrates that our framework is capable of analyzing a 
+large variety of sample programs and properties. Furthermore, we compared our implementation 
+against existing static analysis frameworks, the T2 Temporal Prover and Ultimate LTL Automizer.
+The results of our evaluation show that our implementation is on par with the two 
+existing analyzer on the majority of the test-cases.\\
+
+A weakness of our implementation is the handling of non-determinism under certain conditions. 
+FuncTion struggles with non-deterministic choices and assignments. 
+Information about variables is lost during the analysis due to imprecision of the decision-tree abstract domain.\\
+
+Another contribution is a new frontend for FuncTion that supports arbitrary control-flow jumps and branches. 
+In addition to that, the CTL analysis, as opposed to the previous versions of FuncTion, 
+now supports function inlining and function calls. This greatly extends the variety of programs that can be analyzed by FuncTion.
+
 \subsection{Future Work}
+We now propose possible future work based on the results of this thesis.
+
+\subsubsection*{Improved Precision for Non-determinism}
+FuncTion suffers from imprecision when handling non-deterministic choices and assignments. 
+The decision-tree abstract domain could be improved to offer preciser results when dealing with non-determinism. 
+This would greatly improve the existing CTL analysis capabilities of FuncTion.
+
+\subsubsection*{Proving Soundness}
+Currently, there is no formal proof for the soundness of the presented abstract semantics. 
+A formal proof would improve the confidence in the analysis results of our framework.
+
+\subsubsection*{Supporting LTL Properties}
+Future work could investigate how the current analysis framework could be extended to support linear temporal logic (LTL). 
+This would require a more substantial adaptation of the existing work because CTL and LTL are not comparable in general.
+LTL is not as easily composable as CTL. The semantic of CTL is defined in terms of states which makes it possible 
+to take a set of states that satisfy one CTL formula as input to another atomic CTL operator.
+In LTL however, the semantic is defined in terms of traces starting from an initial state. 
+If one can show that a property holds for a set of traces, 
+it is not obvious how that information can be reused to show that a more complex LTL formula holds.
+
+
 
 \pagebreak
 
