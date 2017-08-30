@@ -5,6 +5,7 @@
 \usepackage{algpseudocode} 
 \usepackage{algorithm}
 \usepackage{amsmath,amssymb,graphicx,listings,stmaryrd}
+\usepackage{pifont}
 \usepackage{tcolorbox}
 \usepackage{subcaption}
 \usepackage{amsthm}
@@ -27,6 +28,17 @@
 
 \newcommand\eqdef{\mathrel{\overset{\makebox[0pt]{\mbox{\normalfont\tiny\sffamily def}}}{=}}}
 
+\newcommand{\inevitably}{\ensuremath{\forall}}
+\newcommand{\possibly}{\ensuremath{\exists}}
+\newcommand{\globally}{\ensuremath{\square}}
+\newcommand{\finally}{\ensuremath{\lozenge}}
+\newcommand{\nextime}{\ensuremath{\bigcirc}}
+\newcommand{\until}{\ensuremath{\mathrel{\mathsf{U}}}}
+
+\newcommand{\cmark}{\textcolor{green!75!black}{\ding{51}$^{\ }$}} % check mark
+\newcommand{\nmark}{-$^{\ }$} % null mark
+\newcommand{\smark}{\textcolor{green!75!black}{\ding{51}$^*$}} % starred check mark
+\newcommand{\xmark}{\textcolor{red}{\ding{55}$^{\ }$}} % cross mark
 
 
 \setlength{\parindent}{0pt}
@@ -2223,7 +2235,10 @@ It can analyze LTL properties of C programs. LTL and CTL share a common fragment
 Therefore not all of our test cases can be run by Ultimate.\\
 
 Table~\ref{tbl:test_cases} lists all test cases and the corresponding CTL properties that were analyzed for the
-evaluation. The first set of test cases is a series of toy examples that demonstrate the basic capabilities of FuncTion (1.x). 
+evaluation\footnote{Test system: 
+    Lenovo Thinkpad T460s, Intel i7-6600U, 20GB Ram, Arch Linux with Linux 4.11, OCaml 4.04.1, APRON 20160125
+}. 
+The first set of test cases is a series of toy examples that demonstrate the basic capabilities of FuncTion (1.x). 
 The second set of test cases (2.x) were taken from Eric Kosinens PhD thesis~\cite{KoskinenPhd} and are publicly available on 
 GitHub\footnote{\url{https://github.com/ultimate-pa/ultimate/tree/dev/trunk/examples/LTL/koskinen}}. 
 Note that we only took a subset of these test cases since not all of them were 
@@ -2235,69 +2250,80 @@ The corresponding CTL properties were chosen by us.\\
 
 
 \begin{table}
-\scriptsize\begin{tabular}{l l l}
-    \textbf{No} & \textbf{Program} & \textbf{Property} \\
+\begin{center}
+\scriptsize
+
+\begin{tabular}{lllcc}
+\textbf{No} & \textbf{Program} & \textbf{CTL Property} & \textbf{Result} & \textbf{Time} \\
 \hline
-1.1 & and\_test.c & $\forall\square\forall\lozenge(n = 1) \land \forall\lozenge(n = 0)$ \\
-1.2 & and\_test.c & $\forall\square\forall\lozenge(n = 1)$ \\
-1.3 & and\_test.c & $\forall\lozenge(n = 0)$ \\
-1.4 & global\_test\_simple. & $\forall\square\forall\lozenge(x \leq -10)$ \\
-1.5 & multi\_branch\_choice.c & $\forall\lozenge(x = 4 \lor x = -4)$ \\
-1.6 & multi\_branch\_choice.c & $\exists\lozenge(x = -4)$ \\
-1.7 & or\_test. & $\forall\lozenge\forall\square(x < -100) \lor \forall\lozenge(x = 20)$  \\
-1.8 & potential\_termination.c & $\exists\lozenge(exit: \mathtt{true})$ \\
-1.9 & until\_test.c & $\forall(x \geq y \ U \ x = y)$ \\
-1.10 & existential\_test\_1 & $\exists\lozenge(r = 1)$ \\
-1.11 & existential\_test\_3 & $\exists\lozenge(r = 1)$ \\
-1.12 & existential\_test\_4 & $\exists\lozenge(r = 1)$ \\
+1.1 & and\_test.c & $\inevitably\globally\inevitably\finally(\text{n} = 1) \land \inevitably\finally(\text{n} = 0)$ & \cmark & 0.05s \\
+1.2 & and\_test.c & $\inevitably\globally\inevitably\finally(\text{n} = 1)$ & \cmark & 0.05s \\
+1.3 & and\_test.c & $\inevitably\finally(\text{n} = 0)$ & \cmark & 0.05s \\
+1.4 & global\_test.c & $\inevitably\globally\inevitably\finally(\text{x} \leq -10)$ & \cmark & 0.15s \\
+1.5 & multi\_choice.c & $\inevitably\finally(\text{x} = 4 \lor \text{x} = -4)$ & \cmark & 0.04s \\
+1.6 & multi\_choice.c & $\possibly\finally(\text{x} = -4)$ & \cmark & 0.04s \\
+1.7 & or\_test.c & $\inevitably\finally\inevitably\globally(\text{x} < -100) \lor \inevitably\finally(\text{x} = 20)$  & \cmark & 0.05s \\
+1.8 & may\_term\dots & $\possibly\finally(\text{exit}: true)$ & \xmark & \nmark \\
+1.9 & until\_test.c & $\inevitably(\text{x} \geq \text{y} \until \text{x} = \text{y})$ & \cmark & 0.03s \\
+1.10 & exists\_test1.c & $\possibly\finally(\text{r} = 1)$ & \cmark & 0.01s \\
+1.11 & exists\_test3.c & $\possibly\finally(\text{r} = 1)$ & \cmark & 0.02s \\
+1.12 & exists\_test4.c & $\possibly\finally(\text{r} = 1)$ & \cmark & 0.01s \\
+1.13 & fin\_ex.c & $\possibly\globally\possibly\finally(\text{n} = 1)$ & \cmark & 0.04s \\
+1.14 & until\_ex.c & $\possibly(\text{x} \geq \text{y} \until \text{x} = \text{y})$ & \cmark & 0.03s \\
 \hline
-2.1 & acqrel.c & $\forall\square((a = 1) \Rightarrow \forall\lozenge(r = 1))$ \\
-2.2 & acqrel\_mod.c & $\forall\square((a = 1) \Rightarrow \forall\lozenge(r = 1))$ \\
-2.3 & fig8-2007.c & $(set = 1) \Rightarrow \forall\lozenge(unset = 1)$ \\
-2.4 & fig8-2007\_mod.c & $(set = 1) \Rightarrow \forall\lozenge(unset = 1)$ \\
-2.5 & win4.c & $\forall\lozenge\forall\square(WItemsNum \geq 1)$ \\
-2.6 & toylin.c & $(c \leq 5 \land c > 0) \lor \forall\lozenge(resp > 5)$ \\
+2.1 & acqrel.c & $\inevitably\globally(\text{a} = 1 \Rightarrow \inevitably\finally(\text{r} = 1))$ & \smark & 0.75s \\
+2.2 & acqrel.c$^*$ & $\inevitably\globally(\text{a} = 1 \Rightarrow \inevitably\finally(\text{r} = 1))$ & \cmark & 8s \\
+2.3 & fig8-2007.c & $ \text{set} = 1 \Rightarrow \inevitably\finally(\text{unset} = 1)$ & \xmark & \nmark \\
+2.4 & fig8-2007.c$^*$ & $\text{set} = 1 \Rightarrow \inevitably\finally(\text{unset} = 1)$ & \cmark & 1s \\
+2.5 & win4.c & $\inevitably\finally\inevitably\globally(\text{WItemsNum} \geq 1)$ & \cmark & 0.15s \\
+2.6 & toylin.c & $(\text{c} \leq 5 \land \text{c} > 0) \lor \inevitably\finally(\text{resp} > 5)$ & \xmark & \nmark \\
 \hline
-3.1 & cb\_1\_safe\_sfty.c & $\forall\square((cb = 1) \Rightarrow \forall\square(cb = 1))$ \\
-3.2 & cb\_1\_unsafe\_sfty.c & $\neg \forall\square((cb = 1) \Rightarrow \forall\square(cb = 1))$ \\
-3.3 & cb\_2\_safe\_lifeness.c & $\forall\square\forall\lozenge(ot < t)$ \\
-3.4 & cb\_2\_unsafe\_lifeness.c & $\neg \forall\square\forall\lozenge(ot < t)$ \\
-3.5 & cb\_3\_safe\_sfty.c & $\forall\square((i = 3) \Rightarrow \forall\square\forall\lozenge(t> ot))$ \\
-3.6 & cb\_3\_unsafe\_sfty.c & $\neg \forall\square((i = 3) \Rightarrow \forall\square\forall\lozenge(t> ot))$ \\
-3.7 & cb\_4\_safe\_sfty.c & $\forall\square(i \neq 3 \lor tem \leq lim \lor \forall\lozenge\forall\square(cb = 1))$ \\
-3.8 & cb\_4\_unsafe\_sfty.c & $\neg\forall\square(i \neq 3 \lor tem \leq lim \lor \forall\lozenge\forall\square(cb = 1))$ \\
-3.9 & cb\_5\_safe\_sfty.c & $ \forall(i = 0 \ U \ (\forall( i = 1 \ U \ \forall\square(i = 3)) \lor \forall\square(i = 1)))$ \\
-3.10 & cb\_5\_safe\_cheat.c & $ \forall(i = 0 \ U \ (\forall( i = 1 \ U \ \forall\square(i = 3)) \lor \forall\square(i = 1)))$ \\
-3.11 & cb\_5\_unsafe\_sfty.c & $ \neg\forall(i = 0 \ U \ (\forall( i = 1 \ U \ \forall\square(i = 3)) \lor \forall\square(i = 1)))$ \\
-3.12 & cb\_6\_safe\_sfty.c & $\forall\square(lim \leq -273 \lor lim \geq 10 \lor ti \geq 0 \lor \forall\lozenge(wl = 1))$ \\
-3.13 & cb\_6\_unsafe\_sfty.c & $\neg\forall\square(lim \leq -273 \lor lim \geq 10 \lor ti \geq 0 \lor \forall\lozenge(wl = 1))$ \\
-3.14 & nestedRandomLoop\dots & $\forall\square(i \geq n)$ \\
-3.15 & timer-simple.c & $\neg \forall\square(timer = 0 \Rightarrow \forall\lozenge(output = 1))$ \\
-3.16 & togglecounter\dots & $\forall\square(\forall\lozenge(t=1) \land \forall\lozenge(t=0))$ \\
-3.17 & toggletoggle\dots & $\forall\square(\forall\lozenge(t=1) \land \forall\lozenge(t=0))$ \\
-3.18 & PotentialMinimize\dots & $\forall\square(x > 0 \Rightarrow \forall\lozenge(y=0))$ \\
-3.19 & cav2015.c & $\forall\square(x > 0 \Rightarrow \forall\lozenge(y=0))$ \\
-3.20 & simple-1.c & $\forall\lozenge(x > 10000)$ \\
-3.21 & simple-2.c & $\forall\lozenge(x > 100)$ \\
-3.22 & Bug\_NoLoop\dots & $\neg\forall\lozenge(ap>2)$ \\
+3.1 & cb1\_safe.c & $\inevitably\globally(\text{cb} = 1 \Rightarrow \inevitably\globally(\text{cb} = 1))$ & \cmark & 0.75s \\
+3.2 & cb1\_unsafe.c & $\neg \inevitably\globally(\text{cb} = 1 \Rightarrow \inevitably\globally(\text{cb} = 1))$ & \cmark & 3s \\
+3.3 & cb2\_safe.c & $\inevitably\globally\inevitably\finally(\text{ot} < t)$ & \cmark & 3.2s \\
+3.4 & cb2\_unsafe.c & $\neg \inevitably\globally\inevitably\finally(\text{ot} < t)$ & \cmark & 0.8s \\
+3.5 & cb3\_safe.c & $\inevitably\globally(\text{i} = 3 \Rightarrow \inevitably\globally\inevitably\finally(\text{t} > \text{ot}))$ & \cmark & 1.7s \\
+3.6 & cb3\_unsafe.c & $\neg \inevitably\globally(\text{i} = 3 \Rightarrow \inevitably\globally\inevitably\finally(\text{t} > \text{ot}))$ & \cmark & 1.25s \\
+3.7 & cb4\_safe.c & $\inevitably\globally(\text{i} \neq 3 \lor \text{tem} \leq \text{lim} \lor \inevitably\finally\inevitably\globally(\text{cb} = 1))$ & \cmark & 5.5s \\
+3.8 & cb4\_unsafe.c & $\neg\inevitably\globally(\text{i} \neq 3 \lor \text{tem} \leq \text{lim} \lor \inevitably\finally\inevitably\globally(\text{cb} = 1))$ & \cmark & 85s \\
+3.9 & cb5\_safe.c & $ \inevitably(\text{i} = 0 \until (\inevitably(\text{i} = 1 \until \inevitably\globally(\text{i} = 3)) \lor \inevitably\globally(\text{i} = 1)))$ & \xmark & \nmark \\
+3.10 & cb5\_safe.c$^*$ & $ \inevitably(\text{i} = 0 \until (\inevitably(\text{i} = 1 \until \inevitably\globally(\text{i} = 3)) \lor \inevitably\globally(\text{i} = 1)))$ & \cmark & 14s \\
+3.11 & cb5\_unsafe.c & $ \neg\inevitably(\text{i} = 0 \until (\inevitably(\text{i} = 1 \until \inevitably\globally(\text{i} = 3)) \lor \inevitably\globally(\text{i} = 1)))$ & \cmark & 14s \\
+3.12 & cb6\_safe.c & $\inevitably\globally(\text{lim} \leq -273 \lor \text{lim} \geq 10 \lor \text{ti} \geq 0 \lor \inevitably\finally(\text{wl} = 1))$ & \cmark & 6.5s \\
+3.13 & cb6\_unsafe.c & $\neg\inevitably\globally(\text{lim} \leq -273 \lor \text{lim} \geq 10 \lor \text{ti} \geq 0 \lor \inevitably\finally(\text{wl} = 1))$ & \cmark & 6.5s \\
+3.14 & nestedR\dots & $\inevitably\globally(\text{i} \geq \text{n})$ & \cmark & 0.01s \\
+3.15 & timer\dots & $\neg \inevitably\globally(\text{timer} = 0 \Rightarrow \inevitably\finally(\text{output} = 1))$ & \xmark & \nmark \\
+3.16 & togglec\dots & $\inevitably\globally(\inevitably\finally(\text{t} = 1) \land \inevitably\finally(\text{t} = 0))$ & \xmark & \nmark \\
+3.17 & togglet\dots & $\inevitably\globally(\inevitably\finally(\text{t} = 1) \land \inevitably\finally(\text{t} = 0))$ & \cmark & 0.02s \\
+3.18 & Pot\dots Min\dots & $\inevitably\globally(\text{x} > 0 \Rightarrow \inevitably\finally(\text{y} = 0))$ & \smark & 0.15s \\
+3.19 & cav2015.c & $\inevitably\globally(\text{x} > 0 \Rightarrow \inevitably\finally(\text{y} = 0))$ & \smark & 0.14s \\
+3.20 & simple-1.c & $\inevitably\finally(\text{x} > 10000)$ & \cmark & 0.07s \\
+3.21 & simple-2.c & $\inevitably\finally(\text{x} > 100)$ & \cmark & 0.05s \\
+3.22 & Bug\_No\dots & $\neg\inevitably\finally(\text{ap} > 2)$ & \cmark & 0.12s \\
 \hline
-4.1 & Bangalore\dots & $\exists\lozenge(x < 0)$ \\
-4.2 & Ex02\dots & $i < 5 \Rightarrow \forall\lozenge(exit: \mathtt{true})$ \\
-4.3 & Ex07\dots & $\forall\lozenge\forall\square(i = 0)$ \\
-4.4 & java\_Sequence\dots & $\forall\lozenge(\forall\lozenge(j \geq 21) \land i = 100)$ \\
-4.4 & Madrid\dots & $\forall\lozenge(x = 7 \land \forall\lozenge\forall\square(x = 2))$ \\
-4.4 & NO\_02\dots & $\forall\lozenge\forall\square(j = 0)$ \\
+4.1 & Bangalore\dots & $\possibly\finally(\text{x} < 0)$ & \xmark & \nmark \\
+4.2 & Ex02\dots & $\text{i} < 5 \Rightarrow \inevitably\finally(\text{exit}: true)$ & \cmark & 0.04s \\
+4.3 & Ex07\dots & $\inevitably\finally\inevitably\globally(\text{i} = 0)$ & \cmark & 0.1s \\
+4.4 & java\_Seq\dots & $\inevitably\finally(\inevitably\finally(\text{j} \geq 21) \land \text{i} = 100)$ & \cmark & 0.3s \\
+4.5 & Madrid\dots & $\inevitably\finally(\text{x} = 7 \land \inevitably\finally\inevitably\globally(\text{x} = 2))$ & \cmark & 0.02s \\
+6.6 & NO\_02\dots & $\inevitably\finally\inevitably\globally(\text{j} = 0)$ & \cmark & 0.05s \\
 \end{tabular}
-\caption{Table of test cases. Lists the number, program name and CTL property to be analyzed.}
+\end{center}
+\caption{Table of test cases. Lists the number, program name, CTL property to be analyzed, result of the analysis and runtime.
+    Test cases with a \smark use ordinal-valued counting functions.
+}
 \label{tbl:test_cases}
 \end{table}
 
 
-Table~\ref{tbl:test_cases_results} shows the results of running all test cases with FuncTion, T2 and Ultimate.\\
+Table~\ref{tbl:test_cases_results} compares FuncTion against T2 and Ultimate.\\
 
 The first set of test cases were converted to the T2 format by hand. 
-All test cases with non-existential properties were also executed on Ultimate since they are compatible with LTL.
+All test cases with non-existential properties were also executed on Ultimate since they are compatible with LTL. 
+Note that Ultimate cannot handle existential CTL properties.
 T2 struggles with some of the examples of the fist set. It even crashed for test cases 1.4 and 1.9\footnote{This was reported to the T2 team}.  
+Test cases 1.13 and 1.14 can only be verified by FuncTion. 
+Note that, as opposed to FuncTion, T2 does not support existential \textsf{until} properties (see 1.14).
 Ultimate can handle all non-existential CTL properties of the first test set. 
 FuncTion fails test case 1.8 because it cannot handle non-deterministic assignments with existential properties.\\
 
@@ -2321,61 +2347,66 @@ point in time which makes it hard to draw a fair comparison.
 Furthermore, the T2 specific input format makes it difficult to run larger examples with T2.\\
 
 \begin{table}
-\scriptsize\begin{tabular}{l l l l l}
-    \textbf{No} & \textbf{FuncTion} & \textbf{T2} & \textbf{Ultimate LTL}  \\
-    \hline
-    1.1 & success & fail & success \\
-    1.2 & success & fail & success \\
-    1.3 & success & success & success \\
-    1.4 & success & error & success \\
-    1.5 & success & success & success \\
-    1.6 & success & success & - \\
-    1.7 & success & error & success \\
-    1.8 & fail & success & - \\
-    1.9 & success & fail & success \\
-    1.10 & success & success & - \\
-    1.11 & success & success & - \\
-    1.12 & success & success & - \\
-    \hline
-    2.1 & success$^*$ & success & success \\
-    2.2 & success & success & success \\
-    2.3 & fail & success & success \\
-    2.4 & success & success & success \\
-    2.5 & success & - & success \\
-    2.6 & fail & - & success \\
-    \hline
-    3.1 & success & - & success \\
-    3.2 & success & - & success \\
-    3.3 & success & - & success \\
-    3.4 & success & - & success \\
-    3.5 & success & - & success \\
-    3.6 & success & - & success \\
-    3.7 & success & - & success \\
-    3.8 & success & - & success \\
-    3.9 & fail & - & success \\
-    3.10 & success & - & success \\
-    3.11 & success & - & success \\
-    3.12 & success & - & success \\
-    3.13 & success & - & success \\
-    3.14 & success & - & success \\
-    3.15 & fail & - & success \\
-    3.16 & fail & - & success \\
-    3.17 & success & - & success \\
-    3.18 & success$^*$  & - & success \\
-    3.19 & success$^*$  & - & success \\
-    3.20 & success & - & success \\
-    3.21 & success & - & success \\
-    3.22 & success & - & success \\
-    \hline
-    4.1 & fail & success & - \\
-    4.2 & success & out of memory & success \\
-    4.3 & success & fail & success \\
-    4.4 & success & error & success \\
-    4.5 & success & error & success \\
-    4.6 & success & success & success \\
+\scriptsize
+\begin{center}
+\begin{tabular}{llccc}
+\textbf{No} & \textbf{Program} & \textbf{FuncTion} & \textbf{T2} & \textbf{Ultimate LTL Automizer} \\
+\hline
+1.1 & and\_test.c & \cmark & \xmark & \cmark \\
+1.2 & and\_test.c & \cmark & \xmark & \cmark \\
+1.3 & and\_test.c & \cmark & \cmark & \cmark \\
+1.4 & global\_test.c & \cmark & error & \cmark \\
+1.5 & multi\_choice.c & \cmark & \cmark & \cmark \\
+1.6 & multi\_choice.c & \cmark & \cmark & \nmark \\
+1.7 & or\_test.c & \cmark & error & \cmark \\
+1.8 & may\_term\dots & \xmark & \cmark & \nmark \\
+1.9 & until\_test.c & \cmark & \xmark & \cmark \\
+1.10 & exists\_test1.c & \cmark & \cmark & \nmark \\
+1.11 & exists\_test3.c & \cmark & \cmark & \nmark \\
+1.12 & exists\_test4.c & \cmark & \cmark & \nmark \\
+1.13 & fin\_ex.c & \cmark & \xmark & \nmark \\
+1.14 & until\_ex.c & \cmark & \nmark & \nmark \\
+\hline
+2.1 & acqrel.c & \smark & \cmark & \nmark \\
+2.2 & acqrel.c$^*$ & \cmark & \cmark & \nmark \\
+2.3 & fig8-2007.c & \xmark & \cmark & \nmark \\
+2.4 & fig8-2007.c$^*$ & \cmark & \cmark & \nmark \\
+2.5 & win4.c & \cmark & \nmark & \nmark \\
+2.6 & toylin.c & \xmark & \nmark & \nmark \\
+\hline
+3.1 & cb1\_safe.c & \cmark & \nmark & \cmark \\
+3.2 & cb1\_unsafe.c & \cmark & \nmark & \cmark \\
+3.3 & cb2\_safe.c & \cmark & \nmark & \cmark \\
+3.4 & cb2\_unsafe.c & \cmark & \nmark & \cmark \\
+3.5 & cb3\_safe.c & \cmark & \nmark & \cmark \\
+3.6 & cb3\_unsafe.c & \cmark & \nmark & \cmark \\
+3.7 & cb4\_safe.c & \cmark & \nmark & \cmark \\
+3.8 & cb4\_unsafe.c & \cmark & \nmark & \cmark \\
+3.9 & cb5\_safe.c & \xmark & \nmark & \cmark \\
+3.10 & cb5\_safe.c$^*$ & \cmark & \nmark & \cmark \\
+3.11 & cb5\_unsafe.c & \cmark & \nmark & \cmark \\
+3.12 & cb6\_safe.c & \cmark & \nmark & \cmark \\
+3.13 & cb6\_unsafe.c & \cmark & \nmark & \cmark \\
+3.14 & nestedR\dots & \cmark & \nmark & \cmark \\
+3.15 & timer\dots & \xmark & \nmark & \cmark \\
+3.16 & togglec\dots & \xmark & \nmark & \cmark \\
+3.17 & togglet\dots & \cmark & \nmark & \cmark \\
+3.18 & Pot\dots Min\dots & \smark & \nmark & \cmark \\
+3.19 & cav2015.c & \smark & \nmark & \cmark \\
+3.20 & simple-1.c & \cmark & \nmark & \cmark \\
+3.21 & simple-2.c & \cmark & \nmark & \cmark \\
+3.22 & Bug\_No\dots & \cmark & \nmark & \cmark \\
+\hline
+4.1 & Bangalore\dots & \xmark & \cmark & \nmark \\
+4.2 & Ex02\dots & \cmark & out of memory & \cmark \\
+4.3 & Ex07\dots & \cmark & \xmark & \cmark \\
+4.4 & java\_Seq\dots & \cmark & error & \cmark \\
+4.5 & Madrid\dots & \cmark & error & \cmark \\
+4.6 & NO\_02\dots & \cmark & \cmark & \cmark \\
 \end{tabular}
+\end{center}    
 \caption{Table with results of test cases for FuncTion, T2 and Ultimate LTL Automizer. 
-    The resulting counting functions of test cases marked with $^*$ are ordinal-valued.}
+    Test cases with a \smark use ordinal-valued counting functions. }
 \label{tbl:test_cases_results}
 \end{table}
 
