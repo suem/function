@@ -2,6 +2,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
+\usepackage[a4paper]{geometry}
 \usepackage{algpseudocode} 
 \usepackage{algorithm}
 \usepackage{amsmath,amssymb,graphicx,listings,stmaryrd}
@@ -43,14 +44,51 @@
 
 \setlength{\parindent}{0pt}
 
-\title{Proving Temporal Properties by Abstract Interpretation}
-\date{September 6, 2017}
-\author{Samuel Marco Ueltschi}
-
 
 \begin{document}
 
-\maketitle
+
+\begin{titlepage}
+
+\includegraphics[width=0.4\textwidth]{./logo}
+
+\vspace{3cm}
+
+\centering
+
+{\Huge\textbf{Proving Temporal Properties by Abstract Interpretation}\par} 
+
+\vspace{1cm}
+
+{\huge\textbf{Master's Thesis Report}\par} 
+
+\vspace{1cm}
+
+\begin{LARGE}
+    Samuel Marco Ueltschi
+\end{LARGE}
+
+\vspace{1cm}
+
+\begin{LARGE}
+    September 6, 2017
+\end{LARGE}
+
+\vspace{4cm}
+
+
+\begin{Large}
+    Supervised by Dr. Caterina Urban 
+\end{Large}
+
+\vspace{2cm}
+
+    Prof. Dr. Peter M\"uller\\
+    Chair of Programming Methodology \\
+    Department of Computer Science, ETH Zurich\\
+
+\end{titlepage}
+
 
 \begin{abstract}
     The intended behavior of a program can be specified with temporal logic. Computation-Tree-Logic (CTL) is 
@@ -64,6 +102,11 @@
 \end{abstract}
 
 
+\renewcommand{\abstractname}{Acknowledgements}
+\begin{abstract}
+    I would like to thank Caterina Urban for the valuable discussions and inputs in our weekly meetings, her feedback while writing this report
+    and her overall great support during my work on this thesis. 
+\end{abstract}
 
 \tableofcontents
 \clearpage
