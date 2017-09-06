@@ -48,7 +48,6 @@
 
 \begin{document}
 
-
 \begin{titlepage}
 
 \includegraphics[width=0.4\textwidth]{./logo}
@@ -66,7 +65,7 @@
 \vspace{1cm}
 
 \begin{LARGE}
-    Samuel Marco Ueltschi
+    Samuel Ueltschi
 \end{LARGE}
 
 \vspace{1cm}
@@ -107,6 +106,7 @@
 \begin{abstract}
     I would like to thank Caterina Urban for the valuable discussions and inputs in our weekly meetings, her feedback while writing this report
     and her overall great support during my work on this thesis. 
+    Furthermore, I am grateful to Prof. Peter M\"uller for giving me the opportunity to work on this project.
 \end{abstract}
 
 \tableofcontents
@@ -146,32 +146,34 @@ of at least one possible program execution that satisfies a given property.
 These two kinds of properties are called universal and existential temporal properties and both can be expressed in CTL.\\
 
 We now show two example CTL properties for the program \textsf{SAMPLE} in Figure~\ref{fig:introduction_sample}. 
-We assume $x>0$ at the start of the program. \textsf{SAMPLE} first assigns a random number to $error$. 
-The purpose of this is to model possible runtime errors. 
-If there is no error then $x$ is decremented until it reaches the value $0$.
-Because of the non-deterministic error check, this program has two possible execution traces, one where the if-block is entered and one
-where it is not. Consider the CTL property $\neg error \Rightarrow \forall(0 < x \leq 10 \ U \ x = 0)$. 
-Informally the property states that if a state is reached where $\neg error$ hold, i.e., the
-if-block is entered, then $0 < x \leq 10$ holds among all possible execution traces until a state is reached where $x=0$ holds
-(a formal definition of CTL can be found in Section~\ref{sec:computation_tree_logic}). Due to the non-deterministic error check only one of the
+We assume $x \geq 0$ at the start of the program. 
+\textsf{SAMPLE} decrements $x$ until it reaches the value $0$ if either $y = 1$ or if a random non-deterministic coin toss succeeds.
+Otherwise the program sets $x$ to $-1$.
+Because of non-determinism, this program has two possible execution traces, one where the if-block is entered and one
+where it is not. Consider the CTL property $y = 1 \Rightarrow \forall(x \geq 0 \ U \ x = 0)$. 
+Informally, the property states that if initially $y = 1$, i.e., the
+if-block is entered, then $x \geq 0$ holds among all possible execution traces until a state is reached where $x=0$ holds
+(a formal definition of CTL can be found in Section~\ref{sec:computation_tree_logic}). Due non-determinism only one of the
 two program traces modifies $x$ as stated in the property. 
-This fact can be expressed with the CTL property $\exists(0 < x \leq 10 \ U \ x = 0)$. This states that there exists at least one execution trace
-where $0 < x \leq 10$ holds until a state is reached where $x = 0$ holds. This example demonstrates the difference between universal and existential 
+This fact can be expressed with the CTL property $\exists(x \geq 0 \ U \ x = 0)$. 
+This states that there exists at least one execution trace
+where $x \geq 0$ holds until a state is reached where $x = 0$ holds. This example demonstrates the difference between universal and existential 
 CTL properties and it shows the expressiveness of CTL. Note that there are temporal logic systems like CTL$^{*}$
-that are strictly more expressive than CTL. We chose CTL because it is a natural extension of 
+that are strictly more expressive than CTL~\cite{baier2008principles}. 
+We chose CTL because it is a natural extension of 
 the previous work on the analysis of liveness properties with abstract interpretation.\\
-
 
 \begin{figure}
     \begin{center}
         \begin{tabular}{l}
             $assume(x \geq 0)$ \\
-            $error$ := ? \\
-            \texttt{if} $(\neg error)$ \texttt{do} \\
+            \texttt{if} $(y = 1 \ \lor \ ?)$ \texttt{then} \\
             \hspace{1em}\texttt{while} $(x > 0)$ \texttt{do} \\
             \hspace{2em}$x$ := $x - 1$ \\
             \hspace{1em}\texttt{od}\\
-            \texttt{od}
+            \texttt{else}\\
+                \hspace{2em}$x$ := $-1$ \\
+            \texttt{fi}
         \end{tabular}
     \end{center}
     \vspace{-1em}
@@ -188,24 +190,25 @@ Otherwise, the value of the function has no particular meaning. Counting functio
 as defined in~\cite{CousotCousot-POPL12} and~\cite{UrbanM-VMCAI15}.\\
 
 Consider the property 
-$\exists(0 < x \leq 10 \ U \ x = 0)$ from the previous example. This property is a liveness property that states that $x = 0$ holds eventually for at least
+$\exists(x \geq 0 \ U \ x = 0)$ from the previous example. This property is a liveness property that states that $x = 0$ holds eventually for at least
 one possible program execution. Our framework derives the following counting function for the initial program state 
 through backward interpretation of the control-flow-graph of the program. 
 
 \begin{align*}
 f(x) = \begin{cases}
-    2x + 2 & \text{if} \ x \geq 0 \\
+    2x + 1 & \text{if} \ x \geq 0 \\
     0 & \text{if} \ x = 0 \\
     \text{undefined}    & \text{otherwise}
 \end{cases}
 \end{align*}
 
-If the initial value of $x$ is greater than $0$ then the goal of the liveness property is reached in exactly $2x + 2$ program execution steps.
-It takes $0$ steps if the goal is already reached. Otherwise the function is undefined stating that the analysis does not know if the property 
-is satisfied if $x < 0$. In this case it is clear that the property is not satisfied for $x < 0$, however the analysis will not be able to 
-prove or disprove all CTL properties.\\
+If the initial value of $x$ is greater than $0$ then the goal of the liveness property is reached in exactly $2x + 1$ program execution steps 
+($2x$ steps inside the while loop plus one step to enter the if-block).
+It takes $0$ steps if the goal is already reached. Otherwise the function is undefined, stating that the analysis does not know if the property 
+is satisfied if $x < 0$. In this case it is clear that the property is not satisfied if $x < 0$, however, the analysis is not able to 
+prove or disprove all CTL properties in general.\\
 
-Deciding if a CTL property is satisfied is in general undecidable. We achieve a decidable approximating of counting function by performing
+Deciding if a CTL property is satisfied is in general undecidable. We achieve a decidable approximating of counting functions by performing
 the analysis on the decision tree abstract domain introduced in~\cite{UrbanPhd}. This abstract domain approximates counting functions in terms of 
 piecewise-defined linear functions. We extend this domain with new operators for analyzing CTL properties. Existential CTL properties
 require the addition of under-approximating operators for the abstract domain.\\
@@ -244,7 +247,7 @@ This is based on the definitions presented in~\cite{UrbanM-VMCAI15}.
 
 Transition systems allow us to model the semantics of a program 
 independently of the programming language in which it was written. 
-By expressing the possible transition between states in terms of a relation, 
+By expressing the possible transitions between states in terms of a relation, 
 it is also possible to capture nondeterminism. Figure~\ref{fig:basic_transition_system} 
 shows a simple transition system represented as a directed graph. States are represented as nodes
 and state transitions as directed edges.
@@ -689,7 +692,7 @@ upper bound on the number of steps until a state satisfying $\Phi_2$ is reached.
 
 The $\widetilde{pre}$ relation guarantees that during the backtracking, only those states that
 exclusively transition to states satisfying $\forall(\Phi_1 U \Phi_2)$, are considered. 
-This condition can be relaxed for existential `until' properties by using the $pre$ relation instead. 
+This condition can be relaxed for existential \textsf{until} properties by using the $pre$ relation instead. 
 That way, states that have at least one reachable state satisfying $\exists(\Phi_1 U \Phi_2)$ are also considered 
 during the backtracking (see Definitions~\ref{def:pre} and~\ref{def:tilde_pre}).\\
 
@@ -1602,7 +1605,7 @@ This operator replaces all defined leafs with a $\bot$-leaf and all $\bot$-leafs
 By doing so, all states that originally satisfied the property do not satisfy it any more and vice versa.
 However one has to be careful when changing a partition from undefined to defined. Decision trees are an 
 approximation of the concrete CTL semantics. Therefore not all states that are undefined in the abstract decision tree
-are actually undefined in the concrete ranking function. Partitions that are undefined because of this uncertainty are marked with a 
+are actually undefined in the concrete counting function. Partitions that are undefined because of this uncertainty are marked with a 
 $\top$-leaf. To ensure soundness, these leafs have to be ignored when forming the complement of a decision tree.   
 The $\mathtt{COMPLEMENT}$ operator is implemented in Algorithm~\ref{alg:tree_complement}.
 
@@ -2050,7 +2053,7 @@ We did not pursue more involved intra-procedural analysis approaches since this 
 
 Existential CTL properties can be analyzed using the abstract semantics presented in Section~\ref{sec:abstract_ctl_semantics}. In addition to that, 
 it is also possible to convert existential properties to equivalent universal properties (see Section~\ref{sec:computation_tree_logic}). 
-This can yield more precise results in some cases (see Example 6 in the next subsection).\\
+This can yield more precise results in some cases (see Example 5 in the next subsection).\\
 
 
 \subsection{Examples}\label{sec:implementation_examples}
@@ -2159,6 +2162,7 @@ satisfies $x < 200 \Rightarrow \exists\lozenge(r = 1)$.
 This is because the decision tree abstract domain is not able 
 to capture the effect of non-deterministic variable assignments in 
 case of existential CTL properties. 
+
 For program \textsf{test\_existential\_2}, FuncTion infers the following counting function for the loop-head:
 
 \begin{align*}
@@ -2354,7 +2358,7 @@ The corresponding CTL properties were chosen by us.\\
 \end{tabular}
 \end{center}
 \caption{Table of test cases. Lists the number, program name, CTL property to be analyzed, result of the analysis and runtime.
-    Test cases with a \smark use ordinal-valued counting functions.
+    Test cases with a \smark use ordinal-valued counting functions. Program names marked with ${}^*$ are a slightly adjusted version of the original.
 }
 \label{tbl:test_cases}
 \end{table}
@@ -2377,6 +2381,7 @@ Ultimate was able to verify all examples of the second test set.
 T2 verified the first four, the last two were too large to convert to the T2 format.\\
 
 All test cases of the third test set safe 3.9, 3.15 and 3.16 could be successfully verified by FuncTion. 
+The three failed test cases could not be verified due to imprecision of the decision tree abstract domain. 
 As in the second test set, test case 3.10 is a slightly modified version of 3.9 that FuncTion is able to verify.
 All test cases of the third set are rather large and contain function calls. Therefore we could not afford to translate them
 to T2 due to time limitations. Ultimate LTL Automizer successfully verified all test cases of the third set. 
@@ -2450,7 +2455,9 @@ Furthermore, the T2 specific input format makes it difficult to run larger examp
 \end{tabular}
 \end{center}    
 \caption{Table with results of test cases for FuncTion, T2 and Ultimate LTL Automizer. 
-    Test cases with a \smark use ordinal-valued counting functions. }
+    Test cases with a \smark use ordinal-valued counting functions. 
+    Program names marked with ${}^*$ are a slightly adjusted version of the original.
+}
 \label{tbl:test_cases_results}
 \end{table}
 
@@ -2461,7 +2468,9 @@ FuncTion, as opposed to Ultimate, struggles in some cases when dealing with non-
 It is easy to pinpoint these problems and introduce adjustments that
 would lead to a successful analysis. This gives important insights for future improvements to FuncTion. 
 The benefit of FuncTion over Ultimate is that it can analyze existential properties and that 
-it provides more information when analyzing liveness properties due to the derived counting functions.\\
+it provides more information when analyzing liveness properties due to the derived counting functions.
+Furthermore, only FuncTion is able to analyze existential \textsf{until} properties.
+\\
 
 In conclusion, we believe that our CTL analysis framework is able to keep up with 
 other available static analyzers. The next section concludes the results of this thesis and discusses possible future work.
@@ -2475,7 +2484,7 @@ Our main contribution is an abstract interpretation based static analysis framew
 The framework inductively defines the concrete semantics of arbitrary combinations of CTL operators for state transition system. 
 We present a sound, computable approximation of the concrete semantics that is based on the decision-tree abstract domain.
 Our approach for analyzing existential CTL properties is based on under-approximation operators 
-for the domain of piecewise-defined ranking functions.\\
+for the domain of piecewise-defined linear functions.\\
 
 We provide an experimental implementation of our framework as part of the FuncTion static analyzer. 
 A series of test-cases demonstrates that our framework is capable of analyzing a 
