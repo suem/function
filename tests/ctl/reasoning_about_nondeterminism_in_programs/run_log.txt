@@ -1,0 +1,103 @@
+========== OS frag 1 ~ aqrel  ===============
+
+./function ./acqrel.c -ctl "AG{OR{A!=1}{AF{R==1}}}" -domain polyhedra -joinbwd 5 -minimal -ordinals 2 -precondition "A==0 && R==0"
+TRUE
+
+./function ./acqrel.c -ctl "AG{OR{A!=1}{EF{R==1}}}" -domain polyhedra -joinbwd 5 -minimal -ordinals 2 -precondition "A==0 && R==0"
+UNKNOWN
+
+./function ./acqrel.c -ctl "EF{AND{A==1}{AG{R!=1}}}" -domain polyhedra -joinbwd 5 -minimal -ordinals 2 -precondition "A==0 && R==0"
+UNKNOWN
+
+./function ./acqrel.c -ctl "EF{AND{A==1}{EG{R!=1}}}" -domain polyhedra -joinbwd 5 -minimal -ordinals 2 -precondition "A==0 && R==0"
+UNKNOWN
+
+
+============ OS frag 2 ~ popl07 ===============
+
+./function ./popl07.c -ctl "AG{OR{set != 1}{AF{unset == 1}}}" -domain polyhedra -joinbwd 3 -minimal -ordinals 2 -precondition "set == 0 && unset == 0"
+UNKNOWN
+
+./function ./popl07.c -ctl "AG{OR{set != 1}{EF{unset == 1}}}" -domain polyhedra -joinbwd 3 -minimal -ordinals 2 -precondition "set == 0 && unset == 0"
+UNKNOWN
+
+./function ./popl07.c -ctl "EG{AND{set == 1}{AG{unset != 1}}}" -domain polyhedra -joinbwd 3 -minimal -ordinals 2 -precondition "set == 0 && unset == 0"
+UNKNOWN
+
+./function ./popl07.c -ctl "EG{AND{set == 1}{EG{unset != 1}}}" -domain polyhedra -joinbwd 3 -minimal -ordinals 2 -precondition "set == 0 && unset == 0"
+UNKNOWN
+
+
+========== OS frag 3 ~ 1394 =============
+
+./function ./1394-succeed.c -ctl "AG{OR{keA!=1}{AF{keR==1}}}" -precondition "keA==0 && keR == 0" -domain polyhedra -joinbwd 3 -minimal -ordinals 2 
+TIMEOUT (3 min)
+
+./function ./1394-succeed.c -ctl "AG{OR{keA!=1}{EF{keR==1}}}" -precondition "keA==0 && keR == 0" -domain polyhedra -joinbwd 3 -minimal -ordinals 2 
+TIMEOUT (3 min)
+
+./function ./1394-succeed.c -ctl "EF{AND{keA==1}{AG{keR!=1}}}" -precondition "keA==0 && keR == 0" -domain polyhedra -joinbwd 3 -minimal -ordinals 2 
+UNKNOWN
+
+./function ./1394-succeed.c -ctl "AG{OR{keA!=1}{EG{keR==1}}}" -precondition "keA==0 && keR == 0" -domain polyhedra -joinbwd 3 -minimal -ordinals 2 
+UNKNOWN
+
+=========== OS frag 4 ~ 1394complete ================
+
+./function ./1394complete.c -domain polyhedra -ordinals 2 -minimal -ctl "OR{AF{phi_io_compl == 1}}{AF{phi_nSUC_ret  == 1}}" -precondition "keA==0 && keR==0 && ioA==0 && ioR==0 && phi_nSUC_ret == 0 && phi_io_compl == 0"
+UNKNOWN
+
+./function ./1394complete.c -domain polyhedra -ordinals 2 -minimal -ctl "AND{EG{phi_io_compl != 1}}{EG{phi_nSUC_ret  != 1}}" -precondition "keA==0 && keR==0 && ioA==0 && ioR==0 && phi_nSUC_ret == 0 && phi_io_compl == 0"
+UNKNOWN
+
+./function ./1394complete.c -domain polyhedra -ordinals 2 -minimal -ctl "AND{EF{phi_io_compl == 1}}{EF{phi_nSUC_ret  == 1}}" -precondition "keA==0 && keR==0 && ioA==0 && ioR==0 && phi_nSUC_ret == 0 && phi_io_compl == 0"
+UNKNOWN
+
+./function ./1394complete.c -domain polyhedra -minimal -ctl "OR{AG{phi_io_compl != 1}}{AG{phi_nSUC_ret  != 1}}" -precondition "keA==0 && keR==0 && ioA==0 && ioR==0 && phi_nSUC_ret == 0 && phi_io_compl == 0"
+UNKNOWN
+
+
+============= OS frag 5 ~ st88b ==============
+
+./function ./st88b.c -ctl "AG{AF{WItemsNum >= 1}}" -domain polyhedra -joinbwd 5 -minimal 
+TRUE
+
+./function ./st88b.c -ctl "AG{EF{WItemsNum >= 1}}" -domain polyhedra -joinbwd 5 -minimal  -ordinals 2
+UNKOWN
+
+./function ./st88b.c -ctl "EF{AG{WItemsNum < 1}}" -domain polyhedra -joinbwd 5 -minimal -ordinals 2
+UNKOWN
+
+./function ./st88b.c -ctl "EF{EG{WItemsNum < 1}}" -domain polyhedra -joinbwd 5 -minimal -ordinals 2
+UNKNOWN
+
+
+
+================ PgSQL arch ===================
+
+./function ./pgarch.c -domain polyhedra -minimal -ctl "AG{AF{wakend >= 1}}" -precondition "wakend==1" -ordinals 2 -joinbwd 5
+UNKNOWN
+
+./function ./pgarch.c -domain polyhedra -minimal -ctl "AG{EF{wakend >= 1}}" -precondition "wakend==1" -ordinals 2 -joinbwd 5
+UNKNOWN
+
+./function ./pgarch.c -domain polyhedra -minimal -ctl "EF{AG{wakend < 1}}" -precondition "wakend==1" -ordinals 2 -joinbwd 5
+UNKNOWN
+
+./function ./pgarch.c -domain polyhedra -minimal -ctl "EF{EG{wakend < 1}}" -precondition "wakend==1" -ordinals 2 -joinbwd 5
+UNKNOWN
+
+
+============= smagilla ~ S/W updates =================
+
+./function ./smagilla.c -domain polyhedra -minimal -ctl "OR{c <= 5}{AF{resp > 5}}" -precondition "c > 0 && servers==8 && resp==0 && curr_serv == 8" -ordinals 2 -joinbwd 5
+UNKNOWN
+
+./function ./smagilla.c -domain polyhedra -minimal -ctl "OR{c <= 5}{EF{resp > 5}}" -precondition "c > 0 && servers==8 && resp==0 && curr_serv == 8" -ordinals 2 -joinbwd 5
+UNKNOWN
+
+./function ./smagilla.c -domain polyhedra -minimal -ctl "AND{c > 5}{AG{resp <= 5}}" -precondition "c > 0 && servers==8 && resp==0 && curr_serv == 8" -ordinals 2 -joinbwd 5
+UNKNOWN
+
+./function ./smagilla.c -domain polyhedra -minimal -ctl "AND{c > 5}{EG{resp <= 5}}" -precondition "c > 0 && servers==8 && resp==0 && curr_serv == 8" -ordinals 2 -joinbwd 5
+UNKNOWN
